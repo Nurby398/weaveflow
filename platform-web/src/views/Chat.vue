@@ -35,20 +35,19 @@
  */
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import DispatchCard from '@/components/DispatchCard.vue'
 import SchedulePanel from '@/components/SchedulePanel.vue'
-import SpeakerBar from '@/components/SpeakerBar.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Drawer from '@/components/ui/Drawer.vue'
 import Input from '@/components/ui/Input.vue'
 import PlanCard from '@/components/PlanCard.vue'
+import ChatMessageList from '@/components/ChatMessageList.vue'
 import Empty from '@/components/ui/Empty.vue'
 import Icon from '@/components/ui/Icon.vue'
 import Modal from '@/components/ui/Modal.vue'
 import Textarea from '@/components/ui/Textarea.vue'
-import { agentApi, attachmentRawUrl, conversationApi, logApiError, toFriendlyError, uploadAttachment } from '@/api'
+import { agentApi, conversationApi, logApiError, toFriendlyError, uploadAttachment } from '@/api'
 import { createSSEStream } from '@/api/stream'
 import { useAuthGuard } from '@/composables/useAuthGuard'
 import { useToast } from '@/composables/useToast'
@@ -70,9 +69,9 @@ import {
   statusText,
   statusTone,
 } from '@/lib/dispatch'
-import { formatBytes, formatDateTime, formatNumber, shortId } from '@/lib/format'
+import { formatBytes, shortId } from '@/lib/format'
 import { groupConversations } from '@/lib/conversationGroups'
-import { renderMarkdown, renderStreamingMarkdown } from '@/lib/markdown'
+import { renderMarkdown } from '@/lib/markdown'
 
 const route = useRoute()
 const router = useRouter()
@@ -279,36 +278,6 @@ const dispatchSpeaker = computed(() => currentSpeakerName(activeDispatch))
 const dispatchTeamName = computed(() => activeDispatch.teamName || '')
 
 /** 发言人条：成员的阶段/状态从同一份 activeDispatch 取；取不到就只显示名字 */
-function speakerOf(message) {
-  return memberOf(activeDispatch, { agentId: message.agentId, name: message.agentName })
-}
-
-/**
- * 发言人条头像（主对话里的团队成员 / 调度器）：
- *   1. 成员能落到一条已接入的 agent 记录 → 用它的头像（团队成员各自的 6 张图）；
- *   2. 落不到（例如调度器自己发言）→ **品牌标**。
- * ⚠️ 这里刻意不走 agentAvatar 的哈希兜底：兜底会从 6 张人物照里随机挑一张，
- *    调度器/未知发言人会被贴上一张子智能体的脸。
- */
-function speakerAvatar(message) {
-  const member = speakerOf(message)
-  const agentId = member?.agentId || message.agentId || ''
-  const name = member?.name || message.agentName || ''
-  const agent = agents.value.find((item) => item.id && item.id === agentId)
-  if (agent) return agentAvatar(agent)
-  // 名字能精确映射（① 前缀会被 normalizeName 去掉）就用它，否则品牌标
-  return agentAvatar({ name }) || BRAND_AVATAR
-}
-
-/**
- * 普通会话 assistant 消息的头像：优先按消息自带的 agentId 认人，
- * 其次用会话对应的智能体（headerAgent）；都拿不到退回品牌标——
- * 不留空 src，免得露一个空白圆。
- */
-function assistantAvatar(message) {
-  const agent = agents.value.find((item) => item.id && item.id === message?.agentId) || headerAgent.value
-  return agentAvatar(agent) || BRAND_AVATAR
-}
 
 /**
  * 侧栏会话行的小头像（batch 6a）：按会话记录上的 agentDefId 找到对应智能体再取图
@@ -320,14 +289,6 @@ function conversationAvatar(item) {
   const agentId = item?.agentDefId || ''
   const agent = agentId ? agents.value.find((entry) => entry.id === agentId) : null
   return (agent ? agentAvatar(agent) : '') || BRAND_AVATAR
-}
-
-/**
- * 思考条上的发言人：消息自带身份 > 当前会话对应的智能体 > 默认助手。
- * 名字只从数据里取，不写字面量（默认助手名字面量只允许在 lib/avatars.js 出现一次）。
- */
-function thinkingName(message) {
-  return message?.agentName || headerAgent.value?.name || DEFAULT_ASSISTANT_NAME
 }
 
 /** 产出抽屉：该成员的产出全文 + 契约校验结果 */
@@ -954,16 +915,6 @@ function stopDemo() {
   finishDemoTurn()
 }
 
-/**
- * 织流会话派发（route / confirm）：本地落一条用户消息，后续帧全部交给演示驱动。
- * 驱动通过 handleEvent / handleDelta 这两个**与真实 SSE 完全相同**的入口回灌，
- * 所以演示与真实链路走同一套渲染路径（后端按契约实现后前端零改动）。
- */
-async function startDispatchTurn(content) {
-  pushUserMessage(content)
-  await runDispatch(content)
-}
-
 /** 真正启动演示驱动（不含落用户消息）。计划卡确认后与 @ 召唤等旧路径共用。 */
 async function runDispatch(content) {
   dispatchAgent.value = ''
@@ -1128,9 +1079,6 @@ async function dispatchExample(text) {
 }
 
 /** 助手正文：生成中走流式渲染（末尾空围栏不渲染），结束后走常规渲染 */
-function renderAssistant(message) {
-  return message.streaming ? renderStreamingMarkdown(message.content) : renderMarkdown(message.content)
-}
 
 /* ============================== 附件 ============================== */
 
@@ -1604,88 +1552,20 @@ onBeforeUnmount(() => {
               :description="emptyDescription"
             />
 
-            <article v-for="message in messages" :key="message.id" class="msg" :class="`msg--${message.role}`">
-              <!-- 派发卡片：识别意图 / 阶段进度 / 阶段完成确认 / 低置信度回问 -->
-              <DispatchCard
-                v-if="message.dispatch"
-                :data="message.dispatch"
-                @confirm="confirmStage(message.dispatch)"
-                @choose="chooseCandidate(message.dispatch, $event)"
-                @reject="rejectCandidate(message.dispatch)"
-              />
-
-              <template v-else-if="message.role === 'user'">
-                <div class="msg__bubble">{{ message.content }}</div>
-                <ul v-if="message.attachments?.length" class="msg__files">
-                  <li v-for="id in message.attachments" :key="id">
-                    <a class="msg__file ui-mono" :href="attachmentRawUrl(id)" target="_blank" rel="noopener">
-                      附件 #{{ shortId(id) }}
-                    </a>
-                  </li>
-                </ul>
-              </template>
-
-              <template v-else>
-                <div class="msg__who">
-                  <!-- 发言人条（方案 §3.7）：取代 batch 1 的「来自 …」来源标签，同一身份只留一处标识 -->
-                  <SpeakerBar
-                    v-if="message.agentName"
-                    :name="message.agentName"
-                    :src="speakerAvatar(message)"
-                    :stage-no="speakerOf(message)?.stageNo ?? ''"
-                    :stage-count="activeDispatch.stageCount || ''"
-                    :status="speakerOf(message)?.status || ''"
-                  />
-                  <Avatar v-else :src="assistantAvatar(message)" :name="headerAgent?.name || 'AI'" size="sm" />
-                  <Badge v-if="message.interrupted" tone="warn" dot>已中断</Badge>
-                </div>
-                <div class="md-body" v-html="renderAssistant(message)" />
-
-                <!--
-                  生成中指示（batch 6a）：消息流里**唯一**的一处「正在生成」提示。
-                  与原来的 .md-body--streaming 光标合并——那个光标已从这里撤掉，
-                  同一时刻不再有第二处在闪。轻量一行：图标 + 文字 + 计时，不遮内容。
-                -->
-                <p v-if="message.streaming" class="msg__thinking" role="status" aria-live="polite">
-                  <span class="msg__thinking-glyph" aria-hidden="true"
-                    ><img class="msg__thinking-gif" :src="thinkingGif" alt=""
-                  /></span>
-                  <span class="msg__thinking-text">
-                    {{ thinkingName(message) }}思考中 · 用时 {{ thinkingSeconds }} 秒
-                  </span>
-                  <span class="msg__thinking-dots" aria-hidden="true">…</span>
-                </p>
-                <ul v-if="message.attachments?.length" class="msg__files">
-                  <li v-for="id in message.attachments" :key="id">
-                    <a class="msg__file ui-mono" :href="attachmentRawUrl(id)" target="_blank" rel="noopener">
-                      附件 #{{ shortId(id) }}
-                    </a>
-                  </li>
-                </ul>
-                <p v-if="!message.streaming" class="msg__meta ui-mono">
-                  {{ formatDateTime(message.createdAt) }}
-                  <template v-if="message.tokensIn || message.tokensOut">
-                    · ↑{{ formatNumber(message.tokensIn) }} ↓{{ formatNumber(message.tokensOut) }}
-                  </template>
-                </p>
-              </template>
-
-              <!-- 消息级操作（P0-2）：hover / 键盘聚焦出现；流式中的占位气泡不给 -->
-              <div v-if="!message.streaming && message.content" class="msg__actions">
-                <button type="button" class="msg__action" @click="copyMessage(message)">复制</button>
-                <button
-                  v-if="message.role === 'assistant'"
-                  type="button"
-                  class="msg__action"
-                  @click="regenerate(message)"
-                >
-                  重新生成
-                </button>
-                <button type="button" class="msg__action msg__action--danger" @click="removeMessage(message)">
-                  删除
-                </button>
-              </div>
-            </article>
+            <ChatMessageList
+              :messages="messages"
+              :agents="agents"
+              :header-agent="headerAgent"
+              :active-dispatch="activeDispatch"
+              :thinking-seconds="thinkingSeconds"
+              :thinking-gif="thinkingGif"
+              @copy="copyMessage"
+              @regenerate="regenerate"
+              @remove="removeMessage"
+              @confirm="confirmStage"
+              @choose="chooseCandidate"
+              @reject="rejectCandidate"
+            />
           </div>
         </div>
 
