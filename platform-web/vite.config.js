@@ -96,15 +96,19 @@ export default defineConfig(({ command, mode }) => {
         exclude: ['src/main.js'],
         /**
          * 门槛＝当前实测值的「棘轮」：只许涨、不许跌。
-         * 首次引入时的实测（2026-10-15）：All files 11.85% lines（视图层还没铺组件测试，
-         * 所以全局线放得低；抬高的动作跟着组件测试一起做）。
-         * src/lib 与 src/api 已被单测覆盖得较好，单独按更严的底线卡。
+         *
+         * ⚠️ 基准必须用 **lockfile 精确依赖**（`npm ci` 后）跑出来的数字，不是日常开发机上漂移过的 node_modules：
+         *   实测差异（2026-10-15）：漂移环境下 All functions 40.69%，`npm ci` 后只有 36.71% ——
+         *   按前者设门槛会让 CI 直接红。CI 的 `npm ci` 才是唯一真相。
+         *
+         * lockfile 精确依赖下的实测：All 18.23% lines / 75.81% branch / 36.71% func；
+         * src/lib 60.03% / 89.41%；src/api 83.48%。下面各留 ~1–2 个点余量。
          */
         thresholds: {
-          lines: 11,
-          statements: 11,
-          functions: 38,
-          branches: 70,
+          lines: 17,
+          statements: 17,
+          functions: 35,
+          branches: 74,
           'src/lib/**': { lines: 55, branches: 80 },
           'src/api/**': { lines: 78 },
         },

@@ -3,6 +3,7 @@ node_modules/
 dist/
 .vite/
 coverage/
+coverage-summary.txt
 
 # 本地环境覆盖（.env.development / .env.production 是受控的、要进仓）
 *.local

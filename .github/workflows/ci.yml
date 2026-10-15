@@ -42,8 +42,15 @@ jobs:
         run: npm run verify
 
       # 覆盖率是「棘轮」：低于 vite.config.js 里的门槛即失败（只许涨不许跌）
+      # 用 tee 留一份摘要给 Job Summary —— 门槛一红，日志里就能直接看到是哪个维度掉下来的
       - name: 覆盖率门槛
-        run: npm run test:coverage
+        run: |
+          set -o pipefail
+          npm run test:coverage 2>&1 | tee coverage-summary.txt
+
+      - name: 覆盖率摘要（写入 Job Summary）
+        if: always()
+        run: tail -60 coverage-summary.txt >> "$GITHUB_STEP_SUMMARY"
 
       # 安全门禁：生产依赖必须零高危（这些会进产物，属于交付面）
       # 显式指定官方 registry：本机/镜像源（npmmirror）不实现 audit 端点
