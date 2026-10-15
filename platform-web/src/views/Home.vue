@@ -59,6 +59,14 @@ const groups = computed(() => {
 
 const stageCount = computed(() => new Set(agents.value.map((a) => a.stageNo).filter((n) => n !== null)).size)
 
+/** 平台公共团队数（项目卡片流的总览指标之一） */
+const platformTeamCount = computed(() => teams.value.filter((team) => team.isPlatform).length)
+
+/** 每个项目（团队）的阶段数：成员智能体去重后的 stageNo 数量 */
+function stageCountOf(group) {
+  return new Set(group.agents.map((agent) => agent.stageNo).filter((n) => n !== null)).size
+}
+
 async function load() {
   if (!userStore.loggedIn) return
   loading.value = true
@@ -134,7 +142,7 @@ function goto(path) {
     <header class="workbench__head">
       <div>
         <h2>工作台</h2>
-        <p class="workbench__sub">团队按阶段组织智能体，点卡片直接进入对话。</p>
+        <p class="workbench__sub">每个项目就是一条毕设流水线，点成员卡片直接进入对话。</p>
       </div>
       <dl class="workbench__stats">
         <div class="workbench__stat">
@@ -148,6 +156,10 @@ function goto(path) {
         <div class="workbench__stat">
           <dt>阶段</dt>
           <dd class="ui-mono">{{ stageCount }}</dd>
+        </div>
+        <div class="workbench__stat">
+          <dt>平台</dt>
+          <dd class="ui-mono">{{ platformTeamCount }}</dd>
         </div>
       </dl>
       <div class="workbench__actions">
@@ -189,6 +201,7 @@ function goto(path) {
           <h3 class="team-block__name">{{ group.name }}</h3>
           <Badge v-if="group.isPlatform" tone="primary">平台公共</Badge>
           <Badge tone="neutral">{{ group.agents.length }} 个智能体</Badge>
+          <Badge tone="neutral">阶段 {{ stageCountOf(group) }}</Badge>
           <span class="team-block__id ui-mono">{{ group.id === '__loose__' ? '—' : `#${shortId(group.id)}` }}</span>
           <!-- 未分组不是真实团队，没有可启动的流水线 -->
           <Button
