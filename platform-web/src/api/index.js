@@ -196,6 +196,21 @@ export const feedbackApi = {
   create: (payload) => http.post('/feedback', payload).then(unwrap),
 }
 
+/* ============================== 成本 ============================== */
+
+/**
+ * 成本面板（Paperclip 参照 · 支出追踪）
+ * ------------------------------------------------------------------
+ * 后端接口 FE-B19 未就绪：`GET /api/usage/summary` 现为 404。
+ * 契约（见 docs/前端驱动-后端待实现清单-v1.md）：
+ *   summary = { currency, totalCost, totalTokensIn, totalTokensOut, budget, budgetUsedRatio, byTeam[] }
+ * byTeam[] = { teamId, teamName, isPlatform, cost, tokensIn, tokensOut, runs }
+ * 前端在 `VITE_MOCK_COST` 开启时走 lib/costDemo.js 的演示数据；关闭时走真实接口。
+ */
+export const costApi = {
+  summary: () => fetchOne(http.get('/usage/summary'), 'summary'),
+}
+
 /* ============================== 附件 ============================== */
 
 /**
