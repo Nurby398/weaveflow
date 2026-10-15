@@ -32,32 +32,82 @@ const PORT = Number(process.env.MOCK_PORT || 3010)
 const uuid = (n) => `${String(n).padStart(8, '0')}-1111-4111-8111-111111111111`
 const ago = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString()
 
-const user = { id: uuid(1), email: 'demo@platform.dev', nickname: '演示账号', role: 'user', createdAt: ago(60 * 24 * 30) }
+const user = {
+  id: uuid(1),
+  email: 'demo@platform.dev',
+  nickname: '演示账号',
+  role: 'user',
+  createdAt: ago(60 * 24 * 30),
+}
 
 const teams = [
-  { id: uuid(2), name: '毕业设计流水线', description: '从选题到答辩的多阶段协作团队', createdAt: ago(60 * 24 * 12), agents: [] },
+  {
+    id: uuid(2),
+    name: '毕业设计流水线',
+    description: '从选题到答辩的多阶段协作团队',
+    createdAt: ago(60 * 24 * 12),
+    agents: [],
+  },
 ]
 
 const agents = [
   {
-    id: uuid(11), teamId: uuid(2), name: '需求分析与开题工程师', icon: '✎', stageNo: 1,
+    id: uuid(11),
+    teamId: uuid(2),
+    name: '需求分析与开题工程师',
+    icon: '✎',
+    stageNo: 1,
+    isPlatform: true,
     systemPrompt: '负责把模糊想法整理成可执行的开题报告：明确研究问题、目标、范围与风险，输出结构化提纲。',
-    providerCredId: uuid(21), model: 'deepseek-chat', knowledgeDocIds: [uuid(31), uuid(32)], outputSchema: null, sort: 10, createdAt: ago(60 * 24 * 12),
+    providerCredId: uuid(21),
+    model: 'deepseek-chat',
+    knowledgeDocIds: [uuid(31), uuid(32)],
+    outputSchema: null,
+    sort: 10,
+    createdAt: ago(60 * 24 * 12),
   },
   {
-    id: uuid(12), teamId: uuid(2), name: '架构与数据库设计工程师', icon: '▤', stageNo: 2,
+    id: uuid(12),
+    teamId: uuid(2),
+    name: '架构与数据库设计工程师',
+    icon: '▤',
+    stageNo: 2,
+    isPlatform: true,
     systemPrompt: '根据开题报告产出系统架构图、模块划分与数据库表结构，标注关键取舍。',
-    providerCredId: uuid(21), model: 'deepseek-reasoner', knowledgeDocIds: [uuid(32)], outputSchema: null, sort: 20, createdAt: ago(60 * 24 * 11),
+    providerCredId: uuid(21),
+    model: 'deepseek-reasoner',
+    knowledgeDocIds: [uuid(32)],
+    outputSchema: null,
+    sort: 20,
+    createdAt: ago(60 * 24 * 11),
   },
   {
-    id: uuid(13), teamId: uuid(2), name: '代码开发与测试工程师', icon: '{ }', stageNo: 3,
+    id: uuid(13),
+    teamId: uuid(2),
+    name: '代码开发与测试工程师',
+    icon: '{ }',
+    stageNo: 3,
     systemPrompt: '实现核心模块并补齐单元测试，给出可复现的运行命令。',
-    providerCredId: uuid(22), model: 'qwen3-coder', knowledgeDocIds: [], outputSchema: null, sort: 30, createdAt: ago(60 * 24 * 6),
+    providerCredId: uuid(22),
+    model: 'qwen3-coder',
+    knowledgeDocIds: [],
+    outputSchema: null,
+    sort: 30,
+    createdAt: ago(60 * 24 * 6),
   },
   {
-    id: uuid(14), teamId: uuid(2), name: '论文写作与规范检查', icon: '¶', stageNo: 4,
+    id: uuid(14),
+    teamId: uuid(2),
+    name: '论文写作与规范检查',
+    icon: '¶',
+    stageNo: 4,
     systemPrompt: '按学校模板排版论文，检查引用、图表编号与格式一致性。',
-    providerCredId: uuid(21), model: 'deepseek-chat', knowledgeDocIds: [uuid(31)], outputSchema: null, sort: 40, createdAt: ago(60 * 5),
+    providerCredId: uuid(21),
+    model: 'deepseek-chat',
+    knowledgeDocIds: [uuid(31)],
+    outputSchema: null,
+    sort: 40,
+    createdAt: ago(60 * 5),
   },
 ]
 
@@ -78,8 +128,22 @@ for (const team of teams) {
 }
 
 const providers = [
-  { id: uuid(21), label: 'DeepSeek 官方', baseUrl: 'https://api.deepseek.com/v1', apiKeyHint: 'sk-4f19••••••••7c2e', models: ['deepseek-chat', 'deepseek-reasoner'], createdAt: ago(60 * 24 * 20) },
-  { id: uuid(22), label: '通义千问（自建网关）', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', apiKeyHint: 'sk-9ab3••••••••01fd', models: ['qwen3-coder', 'qwen-max'], createdAt: ago(60 * 24 * 5) },
+  {
+    id: uuid(21),
+    label: 'DeepSeek 官方',
+    baseUrl: 'https://api.deepseek.com/v1',
+    apiKeyHint: 'sk-4f19••••••••7c2e',
+    models: ['deepseek-chat', 'deepseek-reasoner'],
+    createdAt: ago(60 * 24 * 20),
+  },
+  {
+    id: uuid(22),
+    label: '通义千问（自建网关）',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    apiKeyHint: 'sk-9ab3••••••••01fd',
+    models: ['qwen3-coder', 'qwen-max'],
+    createdAt: ago(60 * 24 * 5),
+  },
 ]
 
 const knowledge = [
@@ -89,8 +153,24 @@ const knowledge = [
 ]
 
 const conversations = [
-  { id: uuid(41), teamId: uuid(2), agentDefId: uuid(11), stageNo: 1, parentConversationId: null, title: '开题报告提纲', createdAt: ago(180) },
-  { id: uuid(42), teamId: uuid(2), agentDefId: uuid(13), stageNo: 3, parentConversationId: null, title: 'SSE 流式接口联调', createdAt: ago(45) },
+  {
+    id: uuid(41),
+    teamId: uuid(2),
+    agentDefId: uuid(11),
+    stageNo: 1,
+    parentConversationId: null,
+    title: '开题报告提纲',
+    createdAt: ago(180),
+  },
+  {
+    id: uuid(42),
+    teamId: uuid(2),
+    agentDefId: uuid(13),
+    stageNo: 3,
+    parentConversationId: null,
+    title: 'SSE 流式接口联调',
+    createdAt: ago(45),
+  },
 ]
 
 const assistantMarkdown = [
@@ -107,7 +187,7 @@ const assistantMarkdown = [
   '  data: { content, attachmentIds },',
   '  onDelta: (raw) => {',
   '    const chunk = JSON.parse(raw)',
-  '    append(chunk.choices?.[0]?.delta?.content ?? \'\')',
+  "    append(chunk.choices?.[0]?.delta?.content ?? '')",
   '  },',
   '})',
   'handle.abort()',
@@ -123,12 +203,44 @@ const assistantMarkdown = [
 
 const messages = {
   [uuid(41)]: [
-    { id: uuid(51), role: 'user', content: '帮我把开题报告整理成三部分，重点是技术路线。', attachments: [], tokensIn: 0, tokensOut: 0, createdAt: ago(6) },
-    { id: uuid(52), role: 'assistant', content: assistantMarkdown, attachments: [], tokensIn: 1_284, tokensOut: 986, createdAt: ago(5) },
+    {
+      id: uuid(51),
+      role: 'user',
+      content: '帮我把开题报告整理成三部分，重点是技术路线。',
+      attachments: [],
+      tokensIn: 0,
+      tokensOut: 0,
+      createdAt: ago(6),
+    },
+    {
+      id: uuid(52),
+      role: 'assistant',
+      content: assistantMarkdown,
+      attachments: [],
+      tokensIn: 1_284,
+      tokensOut: 986,
+      createdAt: ago(5),
+    },
   ],
   [uuid(42)]: [
-    { id: uuid(53), role: 'user', content: '流式接口现在能中断了吗？', attachments: [uuid(61)], tokensIn: 0, tokensOut: 0, createdAt: ago(44) },
-    { id: uuid(54), role: 'assistant', content: '可以。前端用 `AbortSignal` 复用 `streamSSE`，中断后服务端会把已生成的部分落库。', attachments: [], tokensIn: 512, tokensOut: 320, createdAt: ago(43) },
+    {
+      id: uuid(53),
+      role: 'user',
+      content: '流式接口现在能中断了吗？',
+      attachments: [uuid(61)],
+      tokensIn: 0,
+      tokensOut: 0,
+      createdAt: ago(44),
+    },
+    {
+      id: uuid(54),
+      role: 'assistant',
+      content: '可以。前端用 `AbortSignal` 复用 `streamSSE`，中断后服务端会把已生成的部分落库。',
+      attachments: [],
+      tokensIn: 512,
+      tokensOut: 320,
+      createdAt: ago(43),
+    },
   ],
 }
 
@@ -204,21 +316,36 @@ function makeArtifact(validated, contractJson, bodyChars, missingFields = []) {
 function makeStages(currentArtifact) {
   return [
     {
-      stageNo: 0, agentId: uuid(11), agentName: '需求分析与开题工程师', conversationId: uuid(41),
-      status: 'validated', artifact: makeArtifact(true, STAGE1_CONTRACT, STAGE1_OUTPUT.length),
+      stageNo: 0,
+      agentId: uuid(11),
+      agentName: '需求分析与开题工程师',
+      conversationId: uuid(41),
+      status: 'validated',
+      artifact: makeArtifact(true, STAGE1_CONTRACT, STAGE1_OUTPUT.length),
     },
     {
-      stageNo: 1, agentId: uuid(12), agentName: '架构与数据库设计工程师', conversationId: uuid(42),
+      stageNo: 1,
+      agentId: uuid(12),
+      agentName: '架构与数据库设计工程师',
+      conversationId: uuid(42),
       status: currentArtifact === null ? 'waiting' : 'failed',
       artifact: currentArtifact,
     },
     {
-      stageNo: 2, agentId: uuid(13), agentName: '代码开发与测试工程师', conversationId: null,
-      status: 'pending', artifact: null,
+      stageNo: 2,
+      agentId: uuid(13),
+      agentName: '代码开发与测试工程师',
+      conversationId: null,
+      status: 'pending',
+      artifact: null,
     },
     {
-      stageNo: 3, agentId: uuid(14), agentName: '论文写作与规范检查', conversationId: null,
-      status: 'pending', artifact: null,
+      stageNo: 3,
+      agentId: uuid(14),
+      agentName: '论文写作与规范检查',
+      conversationId: null,
+      status: 'pending',
+      artifact: null,
     },
   ]
 }
@@ -255,9 +382,7 @@ function contractInvalidBody(runId) {
         ok: false,
         missing: ['scenario', 'acceptanceCriteria'],
         extra: ['notes'],
-        orderIssues: [
-          { field: 'techStack', expectedIndex: 2, actualIndex: 4, occupiedBy: 'timeline' },
-        ],
+        orderIssues: [{ field: 'techStack', expectedIndex: 2, actualIndex: 4, occupiedBy: 'timeline' }],
         typeIssues: [{ field: 'milestones', expected: 'array', actual: 'string' }],
         retryAllowed,
         maxRetries: retryAllowed ? 1 : 0,
@@ -295,7 +420,23 @@ function maskToken(token) {
   return text.length <= 8 ? '••••••••' : `${text.slice(0, 5)}••••••••${text.slice(-4)}`
 }
 
-const streamReply = (res) => {
+/** 人工视觉验收用的富文本回复（含有意未闭合的代码围栏，用来看渲染） */
+const DEFAULT_STREAM_TEXT = [
+  '已收到你的问题。',
+  '下面给出**可中断**的实现要点：\n\n',
+  '```js\n',
+  'const handle = createSSEStream(url, { onDelta })\n',
+  'handle.abort()\n',
+  '```\n\n',
+  '中断后服务端仍会落库已生成内容。',
+]
+
+/**
+ * SSE 假回复。
+ * intervalMs 默认 500（人工看节奏像真流式）；E2E 用 20ms，否则一条回复要等十几秒。
+ * text 默认富文本；E2E 传纯文本短句，避免"围栏未闭合"这类渲染时序干扰断言。
+ */
+const streamReply = (res, intervalMs = 500, text = DEFAULT_STREAM_TEXT) => {
   res.writeHead(200, {
     'content-type': 'text/event-stream; charset=utf-8',
     'cache-control': 'no-cache',
@@ -311,7 +452,6 @@ const streamReply = (res) => {
   }
   res.write(`event: meta\ndata: ${JSON.stringify(meta)}\n\n`)
 
-  const text = ['已收到你的问题。', '下面给出**可中断**的实现要点：\n\n', '```js\n', 'const handle = createSSEStream(url, { onDelta })\n', 'handle.abort()\n', '```\n\n', '中断后服务端仍会落库已生成内容。']
   let index = 0
   const timer = setInterval(() => {
     if (index >= text.length) {
@@ -321,10 +461,14 @@ const streamReply = (res) => {
       res.end()
       return
     }
-    const chunk = { id: 'chatcmpl-mock', object: 'chat.completion.chunk', choices: [{ index: 0, delta: { content: text[index] }, finish_reason: null }] }
+    const chunk = {
+      id: 'chatcmpl-mock',
+      object: 'chat.completion.chunk',
+      choices: [{ index: 0, delta: { content: text[index] }, finish_reason: null }],
+    }
     res.write(`data: ${JSON.stringify(chunk)}\n\n`)
     index += 1
-  }, 500)
+  }, intervalMs)
   res.on('close', () => clearInterval(timer))
 }
 
@@ -335,12 +479,17 @@ const server = createServer(async (req, res) => {
 
   // 预检
   if (method === 'OPTIONS') {
-    res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' })
+    res.writeHead(204, {
+      'access-control-allow-origin': '*',
+      'access-control-allow-headers': '*',
+      'access-control-allow-methods': '*',
+    })
     res.end()
     return
   }
 
-  if (path === '/api/auth/login' && method === 'POST') return json(res, { accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token', user })
+  if (path === '/api/auth/login' && method === 'POST')
+    return json(res, { accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token', user })
   if (path === '/api/me') return json(res, { user })
   if (path === '/api/agents' && method === 'GET') return json(res, { agents })
   if (path === '/api/agents' && method === 'POST') {
@@ -387,21 +536,37 @@ const server = createServer(async (req, res) => {
   }
   if (path.startsWith('/api/agents/') && method === 'DELETE') return json(res, undefined, 204)
   if (path === '/api/teams' && method === 'GET') return json(res, { teams })
-  if (path === '/api/teams' && method === 'POST') return json(res, { team: { ...teams[0], id: uuid(98), name: '新建团队', agents: [] } }, 201)
+  if (path === '/api/teams' && method === 'POST')
+    return json(res, { team: { ...teams[0], id: uuid(98), name: '新建团队', agents: [] } }, 201)
   if (path.startsWith('/api/teams/') && method === 'PATCH') {
     const id = path.split('/').pop()
     return json(res, { team: teams.find((item) => item.id === id) || teams[0] })
   }
   if (path.startsWith('/api/teams/') && method === 'DELETE') return json(res, undefined, 204)
   if (path === '/api/providers' && method === 'GET') return json(res, { providers })
-  if (path === '/api/providers' && method === 'POST') return json(res, { provider: { ...providers[0], id: uuid(97), label: '新建凭据' } }, 201)
+  if (path === '/api/providers' && method === 'POST')
+    return json(res, { provider: { ...providers[0], id: uuid(97), label: '新建凭据' } }, 201)
   if (path.endsWith('/test') && method === 'POST') {
     return json(res, { providerId: path.split('/')[3], ok: true, status: 200, latencyMs: 214, modelCount: 2 })
   }
   if (path.startsWith('/api/providers/') && method === 'DELETE') return json(res, undefined, 204)
   if (path === '/api/knowledge' && method === 'GET') return json(res, { knowledge })
   if (path === '/api/conversations' && method === 'GET') return json(res, { conversations })
-  if (path === '/api/conversations' && method === 'POST') return json(res, { conversation: { ...conversations[0], id: uuid(43), title: '新会话' } }, 201)
+  if (path === '/api/conversations' && method === 'POST')
+    return json(res, { conversation: { ...conversations[0], id: uuid(43), title: '新会话' } }, 201)
+  // 会话消息与 SSE 流：聊天主路径的 E2E 需要它们（无需真后端）
+  if (/^\/api\/conversations\/[^/]+\/messages$/.test(path) && method === 'GET') {
+    return json(res, {
+      messages: [
+        { id: uuid(51), role: 'user', content: '这是历史提问', createdAt: ago(6), tokensIn: 0, tokensOut: 0 },
+        { id: uuid(52), role: 'assistant', content: '这是历史回答', createdAt: ago(5), tokensIn: 12, tokensOut: 34 },
+      ],
+    })
+  }
+  if (/^\/api\/conversations\/[^/]+\/stream$/.test(path) && method === 'POST') {
+    // E2E 走纯文本短回复：内容少、无围栏，断言稳定
+    return streamReply(res, 20, ['已收到你的问题。', 'E2E 假回复：流式结束。'])
+  }
   if (/^\/api\/conversations\/[^/]+\/messages$/.test(path)) {
     const id = path.split('/')[3]
     return json(res, { messages: messages[id] || [] })
@@ -478,7 +643,12 @@ const server = createServer(async (req, res) => {
       stage: current,
       artifact: current?.artifact ?? null,
       next: next
-        ? { stageNo: next.stageNo, conversationId: next.conversationId, agentId: next.agentId, agentName: next.agentName }
+        ? {
+            stageNo: next.stageNo,
+            conversationId: next.conversationId,
+            agentId: next.agentId,
+            agentName: next.agentName,
+          }
         : null,
       completed: !next,
       injection: next ? { contractChars: 320, bodyChars: 1024, bodyTruncated: false } : null,
@@ -493,7 +663,14 @@ const server = createServer(async (req, res) => {
   }
 
   if (path === '/api/attachments' && method === 'POST') {
-    return json(res, { attachment: { id: uuid(61), filename: '需求草稿.txt', mime: 'text/plain', bytes: 2048, hasText: true }, extract: { status: 'ok', note: null } }, 201)
+    return json(
+      res,
+      {
+        attachment: { id: uuid(61), filename: '需求草稿.txt', mime: 'text/plain', bytes: 2048, hasText: true },
+        extract: { status: 'ok', note: null },
+      },
+      201,
+    )
   }
 
   return json(res, { message: `mock 未实现：${method} ${path}` }, 404)

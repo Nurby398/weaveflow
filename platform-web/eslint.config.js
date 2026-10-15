@@ -59,7 +59,7 @@ export default [
   {
     // Node 侧文件：构建配置、脚本、ESLint 自身配置。
     // 这些文件里的 console 是脚本输出（如 mock 服务的启动提示），属合理用法，故关闭该规则。
-    files: ['vite.config.js', 'eslint.config.js', 'scripts/**/*.{js,mjs}'],
+    files: ['vite.config.js', 'eslint.config.js', 'playwright.config.js', 'scripts/**/*.{js,mjs}', 'e2e/**/*.js'],
     languageOptions: { globals: { ...globals.node } },
     rules: { 'no-console': 'off' },
   },

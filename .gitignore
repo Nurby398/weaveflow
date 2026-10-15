@@ -4,6 +4,9 @@ dist/
 .vite/
 coverage/
 coverage-summary.txt
+playwright-report/
+test-results/
+blob-report/
 
 # 本地环境覆盖（.env.development / .env.production 是受控的、要进仓）
 *.local
