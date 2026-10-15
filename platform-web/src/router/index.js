@@ -73,6 +73,27 @@ const routes = [
         meta: { title: '流水线' },
       },
       {
+        // 运行历史（Paperclip 参照）：历次运行列表，接口 FE-B11 未就绪前先占位
+        path: 'runs',
+        name: 'Runs',
+        component: () => import('@/views/Runs.vue'),
+        meta: { title: '运行历史' },
+      },
+      {
+        // 成本（Paperclip 参照）：token/费用聚合与预算，占位
+        path: 'cost',
+        name: 'Cost',
+        component: () => import('@/views/Cost.vue'),
+        meta: { title: '成本' },
+      },
+      {
+        // 评测（Paperclip 参照）：测试用例 → 评分，占位
+        path: 'evals',
+        name: 'Evals',
+        component: () => import('@/views/Evals.vue'),
+        meta: { title: '评测' },
+      },
+      {
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),

@@ -58,12 +58,15 @@ watch(collapsed, (value) => {
   }
 })
 
-/** 侧栏导航项：六项固定 + 开发环境追加「视觉验收」，顺序与路由一致 */
+/** 侧栏导航项：固定项 + 开发环境追加「视觉验收」，顺序与路由一致（Paperclip 参照新增运行历史/成本/评测） */
 const navItems = [
   { to: '/', label: '工作台', icon: 'home' },
   { to: '/chat', label: '对话', icon: 'chat' },
   { to: '/agents', label: '智能体创建', icon: 'agents' },
   { to: '/teams', label: '智能体团队', icon: 'teams' },
+  { to: '/runs', label: '运行历史', icon: 'gauge' },
+  { to: '/cost', label: '成本', icon: 'coin' },
+  { to: '/evals', label: '评测', icon: 'aim' },
   { to: '/settings', label: '设置', icon: 'settings' },
   { to: '/profile', label: '个人中心', icon: 'profile' },
   // 视觉验收（/__ui）只在开发时出现在导航里；生产构建时这一项不存在。
