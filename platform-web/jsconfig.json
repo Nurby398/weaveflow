@@ -1,0 +1,18 @@
+{
+  // 给 VS Code 内置 TS 语言服务用：让它认识 '@/' 别名与 .vue 文件，
+  // 否则跳转、补全、悬停提示全部退化（这正是"打开后看不懂"的原因之一）。
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "checkJs": false,
+    "jsx": "preserve",
+    "types": ["vite/client"]
+  },
+  "include": ["src/**/*.js", "src/**/*.vue", "tests/**/*.js", "vite.config.js", "eslint.config.js"],
+  "exclude": ["node_modules", "dist", "screenshots"]
+}

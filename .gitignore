@@ -1,0 +1,19 @@
+# 依赖与构建产物
+node_modules/
+dist/
+.vite/
+
+# 本地环境覆盖（.env.development / .env.production 是受控的、要进仓）
+*.local
+.env.local
+.env.*.local
+
+# 截图草稿与视觉验收临时产物（正式证据放 platform-web/screenshots/）
+platform-web/.verify/
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+*.iml

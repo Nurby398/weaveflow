@@ -1,0 +1,166 @@
+/**
+ * Markdown 正文与代码块（全局，因为内容由 v-html 注入，scoped 样式无法命中）
+ * 颜色 / 字号一律走 --ui-* 令牌。
+ */
+
+.md-body {
+  font-size: var(--ui-font-size-base);
+  line-height: var(--ui-line-height-base);
+  color: var(--ui-text-label-secondary);
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.md-body > *:first-child {
+  margin-top: 0;
+}
+
+.md-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4 {
+  margin: var(--ui-space-4) 0 var(--ui-space-2);
+  color: var(--ui-text-label-primary);
+  font-weight: var(--ui-font-weight-semibold);
+  line-height: var(--ui-line-height-tight);
+}
+
+.md-body h1 {
+  font-size: var(--ui-font-size-title);
+}
+
+.md-body h2 {
+  font-size: var(--ui-font-size-lg);
+}
+
+.md-body h3,
+.md-body h4 {
+  font-size: var(--ui-font-size-base);
+}
+
+.md-body p {
+  margin: var(--ui-space-2) 0;
+}
+
+.md-body ul,
+.md-body ol {
+  margin: var(--ui-space-2) 0;
+  padding-left: var(--ui-space-5);
+  list-style: revert;
+}
+
+.md-body li {
+  margin: var(--ui-space-1) 0;
+}
+
+.md-body li::marker {
+  color: var(--ui-text-dimmed);
+}
+
+.md-body a {
+  color: var(--ui-primary-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.md-body blockquote {
+  margin: var(--ui-space-3) 0;
+  padding: var(--ui-space-2) var(--ui-space-4);
+  border-left: 2px solid var(--ui-border-l3);
+  background: var(--ui-bg-layer-2);
+  border-radius: 0 var(--ui-radius-2) var(--ui-radius-2) 0;
+  color: var(--ui-text-label-tertiary);
+}
+
+.md-body hr {
+  margin: var(--ui-space-4) 0;
+  border: none;
+  border-top: 1px solid var(--ui-border-l1);
+}
+
+/* ---------------------------- 行内代码 ---------------------------- */
+.md-body code {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-font-size-sm);
+}
+
+.md-body :not(.md-pre) > code {
+  padding: 1px var(--ui-space-1);
+  background: var(--ui-bg-layer-3);
+  border: 1px solid var(--ui-border-l1);
+  border-radius: var(--ui-radius-1);
+  color: var(--ui-text-label-primary);
+}
+
+/* ---------------------------- 代码块 ---------------------------- */
+.md-body .md-pre {
+  margin: var(--ui-space-3) 0;
+  padding: var(--ui-space-3);
+  overflow-x: auto;
+  background: var(--ui-bg-module);
+  border: 1px solid var(--ui-border-l1);
+  border-radius: var(--ui-radius-3);
+  line-height: var(--ui-line-height-tight);
+}
+
+.md-body .md-code {
+  display: block;
+  color: var(--ui-text-label-primary);
+  white-space: pre;
+  tab-size: 2;
+}
+
+/* 轻量高亮令牌（见 src/lib/highlight.js） */
+.md-body .tok-comment {
+  color: var(--ui-text-caption);
+  font-style: italic;
+}
+
+.md-body .tok-str {
+  color: var(--ui-success-label);
+}
+
+.md-body .tok-num {
+  color: var(--ui-warn-label);
+}
+
+.md-body .tok-kw {
+  color: var(--ui-primary-text);
+}
+
+.md-body .tok-punct {
+  color: var(--ui-text-label-tertiary);
+}
+
+/* ---------------------- 流式输出 ---------------------- */
+/* 流式光标已**并入** Chat.vue 的思考条（`.msg__thinking`，batch 6a 合并：同一时刻只保留一处生成提示）。
+   原 `.md-body--streaming` 的竖条光标规则已删除——模板中已无任何元素使用该 class。 */
+
+/* ------------------------------ 表格 ------------------------------ */
+.md-body table {
+  width: 100%;
+  margin: var(--ui-space-3) 0;
+  border-collapse: collapse;
+  font-size: var(--ui-font-size-sm);
+}
+
+.md-body th,
+.md-body td {
+  padding: var(--ui-space-1) var(--ui-space-3);
+  border: 1px solid var(--ui-border-l1);
+  text-align: left;
+}
+
+.md-body th {
+  background: var(--ui-bg-layer-2);
+  color: var(--ui-text-label-primary);
+  font-weight: var(--ui-font-weight-medium);
+}
+
+.md-body td {
+  color: var(--ui-text-label-secondary);
+}

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 单主题：只做明亮模式，声明 color-scheme 让浏览器原生控件（滚动条/表单）也走浅色 -->
+    <meta name="color-scheme" content="light" />
+    <!-- Targo 规格指定字体 Quantico（仅 400/700 两档）；取不到时由 tokens.css 的
+         'Arial Narrow', sans-serif 兜底，不会静默退化成默认衬线体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Quantico:wght@400;700&display=swap"
+    />
+    <title>织流 WEAVEFLOW</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

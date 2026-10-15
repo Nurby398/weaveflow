@@ -1,0 +1,12 @@
+{
+  // 用 VS Code 打开「本目录」（weaveflow-web/platform-web）时推荐的扩展。
+  // 注意：只有把这个目录当作工作区打开，这些推荐才会出现；
+  // 打开上层大目录时 VS Code 会改推它按文件推断的通用扩展（Docker/HTML/markdownlint 等）。
+  "recommendations": [
+    "Vue.volar",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "EditorConfig.EditorConfig"
+  ],
+  "unwantedRecommendations": ["octref.vetur"]
+}

@@ -1,0 +1,598 @@
+/**
+ * 设计令牌层（Design Tokens）· 深色玻璃 / 胶囊
+ * ------------------------------------------------------------------
+ * 本文件的依据**只有用户原话**（2026-10-13 那轮对话）：
+ *   「我想要毛玻璃，胶囊，半透明的视觉感受……所有页面风格统一」
+ *   「深色玻璃 + 彩色光晕背景」（三选一里选的基调）
+ *   「我喜欢目前这个视频背景，可以沿用，智能体对话界面的 ui 设计也要统一，背景就用视频」
+ * 也就是说：**深色基调 + 毛玻璃 + 胶囊 + 半透明**；页面背景是那支视频（见 AppBackground.vue），
+ * 不是渐变。视频之上统一压一层深色蒙版（--ui-app-scrim），保证深底上的正文可读。
+ *
+ * 玻璃配方取自用户提供的《设计参考-Vantage落地页规格.md》2.2 节，三层叠加
+ * （投影 + 内高光 + 外描边），少一层就退化成灰块——三层都已写进令牌与 .ui-glass。
+ *
+ * 强调色与字体令牌**照旧不动**（用户只提了毛玻璃/胶囊/半透明与背景视频）。
+ *
+ * 2026-10-13 追加明亮主题，依据（用户原话）：
+ *   「改完这些再做一版明亮主题的，效果就按照苹果官网做，色彩可以丰富一点，要有活力，
+ *     比如在一些地方加一点活力橙啊这些颜色，并在背景上增加一些背景」
+ * 落地方式：:root 仍是深色一套（一字未动），明亮值全部写在文件末尾的
+ * html[data-theme="light"] 覆盖块里，只换值、不改结构。
+ *
+ * 约定：
+ * 1. 组件内禁止写死颜色与字号，一律引用本文件的 --ui-* 变量（有静态自查测试兜底）；
+ * 2. 只有本文件允许出现十六进制颜色，其余位置只允许 rgba() 或 var()；
+ * 3. 旧的 --ui-bg-layer-* / --ui-bg-overlay 名称保留为玻璃族的别名，
+ *    既有组件不改一行也会跟着变成玻璃；
+ * 4. 面板圆角用 clamp(12px, 1.52vh, 18px)，交互控件（按钮/导航项/标签/输入）用
+ *    --ui-radius-pill（999px）——胶囊档位；切角体系（--ui-chamfer-*）已下线。
+ * ------------------------------------------------------------------
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ============================ 背景分层 ============================ */
+  /* 视频取不到 / reduce 动效时的兜底画布：必须是**实色**，否则会白屏 */
+  /* 依据（用户原话）：「太偏向黑色了，把颜色拉回来一些，不然看着很暗」 → 基色由近黑改为蓝调深灰蓝 */
+  --ui-bg-void: #0d131b;
+  /* 页面画布本身透明——视频在 z-index:-1，所有页面底都让给视频 */
+  --ui-bg-base: transparent;
+  /* 视频之上的固定蒙版：对话页的长文本、表格、代码块靠它压得住。
+     依据（用户原话）：「太偏向黑色了……把颜色拉回来一些」 → 蒙版减薄并转蓝调，让视频的颜色更多透出来 */
+  --ui-app-scrim: linear-gradient(180deg, rgba(13, 19, 27, 0.54), rgba(10, 15, 22, 0.68));
+  /* 兜底底：深色渐变（无 poster 图片，纯色值，不引入新文件） */
+  --ui-app-fallback:
+    radial-gradient(ellipse at 30% 18%, rgba(21, 188, 223, 0.2), transparent 62%),
+    linear-gradient(180deg, #16202b 0%, #0d131b 100%);
+  /* 内容区「向下渐隐的玻璃」：叠在视频之上、内容之下，越往下越收，
+     用于压住底部裸露的视频（用户原话：「收一点吧」）。
+     四页共用这一个令牌（Layout.vue 的内容容器上挂 .ui-glass-veil） */
+  --ui-content-veil: linear-gradient(
+    180deg,
+    rgba(13, 19, 27, 0) 0%,
+    rgba(13, 19, 27, 0.18) 34%,
+    rgba(12, 18, 26, 0.48) 68%,
+    rgba(10, 15, 22, 0.8) 100%
+  );
+
+  /* ===================== 玻璃族（配方对齐 Apple） ===================== */
+  /* 依据：实测自参照页 https://www.apple.com.cn/iphone/ 的 CSS 源与 computed style
+     （合并 12 个样式表共 1079KB，backdrop-filter 79 处，统计结果）：
+       · 全站只有一种模糊配方：saturate(180%) blur(20px)
+         （saturate() 出现 4 次、取值恒为 180%；blur 主流值 20px）
+       · 底色是**单一 rgba、约 80% 不透明**，不是渐变：
+         浅色 rgba(250,250,252,.8) / 深色 rgba(22,22,23,.8)
+       · 玻璃上**没有** border、没有内高光、没有外描边、没有阴影
+         （computed 实测：border 0px、box-shadow none）
+       · 不支持 backdrop-filter 时降级为 .92 量级的实色
+     我们此前是「blur(14px) saturate(108%) + 145deg 渐变 + 白描边 + 内高光 + 外描边 + 投影」，
+     六项全部不同，故整体替换。saturate 由 108% 提到 180% 是"玻璃后颜色发亮"的来源。 */
+  --ui-glass-blur: blur(20px) saturate(180%);
+  /* 层次：卡片与底的明度差本轮拉开一档。
+     依据（用户原话）：「太偏向黑色了，把颜色拉回来一些，不然看着很暗」＋
+     「层次感最好鲜明一点」→ 卡片玻璃整体提亮（略亮于底），底板（侧栏 / 顶栏）仍比卡片深一档。
+     注意：品牌色不在此列，仍是一字未动的 #15bcdf（见下面的品牌色一节）。 */
+  --ui-glass-bg: rgba(38, 50, 68, 0.86);
+  --ui-glass-bg-strong: rgba(30, 40, 55, 0.88);
+  --ui-glass-bg-soft: rgba(46, 59, 78, 0.62);
+  --ui-glass-bg-inset: rgba(34, 45, 61, 0.72);
+  /* 以下四项按参照置空：Apple 玻璃上没有描边 / 内高光 / 外描边 / 投影 */
+  --ui-glass-stroke: transparent;
+  --ui-glass-highlight: none;
+  --ui-glass-outer: none;
+  --ui-glass-shadow-1: none;
+  /* 浮层仍保留投影：参照页自己的 modal 也带阴影，只有"压在内容上的玻璃条"不带 */
+  --ui-glass-shadow-2: 0 12px 32px rgba(4, 8, 14, 0.52);
+  /* backdrop-filter 不被支持时降级：沿用参照的 .92 不透明度量级，先保住可读 */
+  --ui-glass-bg-fallback: rgba(40, 52, 70, 0.92);
+  --ui-glass-bg-strong-fallback: rgba(30, 40, 55, 0.94);
+
+  /* 旧名：既有组件直接吃这几个名字，值指向玻璃族 */
+  --ui-bg-layer-1: var(--ui-glass-bg); /* 卡片 / 面板 */
+  --ui-bg-layer-2: var(--ui-glass-bg-soft); /* 次级分区、用户气泡 */
+  --ui-bg-layer-3: var(--ui-glass-bg-inset); /* 输入框、内容块等互动层 */
+  --ui-bg-overlay: var(--ui-glass-bg-strong); /* 浮层（弹窗 / 下拉 / 抽屉） */
+  --ui-bg-module: var(--ui-glass-bg-strong); /* 模块级容器（侧边栏 / 顶部栏） */
+  --ui-bg-skeleton: rgba(255, 255, 255, 0.08);
+
+  /* ============================== 遮罩 ============================== */
+  /* 依据（用户原话）：「把颜色拉回来一些」 → 遮罩随基色一起转蓝调 */
+  --ui-mask-1: rgba(8, 13, 20, 0.42);
+  --ui-mask-2: rgba(8, 13, 20, 0.62);
+  --ui-mask-3: rgba(8, 13, 20, 0.78);
+
+  /* ======================== 描边四级坡（同一基色） ======================== */
+  /* 深底上的描边靠**白色透明度**递进，不是深色——深色描边在深底上看不见 */
+  --ui-border-l1: rgba(255, 255, 255, 0.08);
+  --ui-border-l2: rgba(255, 255, 255, 0.13);
+  --ui-border-l3: rgba(255, 255, 255, 0.2);
+  --ui-border-l4: rgba(255, 255, 255, 0.3);
+
+  /* ============================ 品牌色（用户指定） ============================ */
+  --ui-primary: #15bcdf;
+  --ui-primary-hover: #3fd0ef;
+  --ui-primary-stroke: #0fa3c2; /* 强调色元素的 1px 描边 */
+  /* 深底上的品牌色文字：提亮一档，保证对比度 */
+  --ui-primary-text: #5fd6f0;
+  --ui-primary-inverted: #ffffff; /* 深底（如危险色实底）上的反白字 */
+  /* 强调色实底上的文字：青底配深字，对比度远高于反白 */
+  --ui-text-on-accent: #06222b;
+
+  /* ======================= 交互态（品牌色 / 白色派生 alpha） ======================= */
+  --ui-interactive-hover: rgba(21, 188, 223, 0.14);
+  --ui-interactive-active: rgba(21, 188, 223, 0.26);
+  --ui-interactive-hover-solid: linear-gradient(145deg, rgba(21, 188, 223, 0.26), rgba(21, 188, 223, 0.14));
+  /* hover 反馈加强一档：导航项 / 图标按钮等「无明显占位」的控件用它，
+     依据（用户原话）：「ui 互动效果显著一点」——原来的 0.14 在玻璃底上几乎看不出变化。 */
+  --ui-interactive-hover-strong: rgba(21, 188, 223, 0.24);
+
+  /* ============================== 按钮 ============================== */
+  --ui-btn-primary-fill: var(--ui-primary);
+  --ui-btn-primary-hover: var(--ui-primary-hover);
+  --ui-btn-info-fill: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  --ui-btn-elevated-fill: var(--ui-glass-bg-strong);
+  --ui-btn-floating-fill: var(--ui-glass-bg-strong);
+  --ui-btn-floating-hover: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+  --ui-btn-ghost-active-fill: rgba(255, 255, 255, 0.1);
+
+  /* ============================= 文本层级 ============================= */
+  /* 深底上的浅色系：正文用 tertiary，仍保持对蒙版后画面的可读对比。
+     依据（用户原话）：「把颜色拉回来一些，不然看着很暗」 → 同一色相整体提亮一档，
+     避免浅色文字发灰发闷；每档之间仍保持层级差 */
+  --ui-text-primary: #f4f7fb; /* 标题 / 主文本 */
+  --ui-text-secondary: #dee5ee; /* 导航链接、次级文本 */
+  /* 正文：卡片本轮提亮后（层次要求），这一档跟着提亮一点点——
+     实测卡片上的正文最差一档从 7.40:1 回到 8:1 上下，给视频逐帧变化留出余量。
+     依据仍是用户原话：「太偏向黑色了，把颜色拉回来一些，不然看着很暗」。 */
+  --ui-text-tertiary: #c0cad8; /* 正文 */
+  --ui-text-caption: #98a3b2;
+  --ui-text-dimmed: #6d7889;
+  --ui-text-inverted: #0b0e12; /* 反相：浅底（品牌白 logo 块）上的深字 */
+  /* 全局链接：深底上的浅青，hover 转白 */
+  --ui-text-link: #d6edf5;
+  --ui-text-link-hover: #ffffff;
+
+  /* 旧名别名：P3 的 label-* 命名，保留以免既有组件回归（新增代码一律用上面的统一名）。 */
+  --ui-text-label-primary: var(--ui-text-primary);
+  --ui-text-label-secondary: var(--ui-text-secondary);
+  --ui-text-label-tertiary: var(--ui-text-tertiary);
+
+  /* =========================== 状态语义色 =========================== */
+  /* 语义名不变，取值随整体提亮一档（依据用户原话：「把颜色拉回来一些，不然看着很暗」） */
+  --ui-warn-fill: rgba(240, 168, 60, 0.22);
+  --ui-warn-label: #f6c477;
+  --ui-danger-fill: rgba(255, 107, 92, 0.22);
+  --ui-danger-label: #ff9d8f;
+  --ui-success-fill: rgba(74, 214, 155, 0.22);
+  --ui-success-label: #72e2b3;
+  --ui-info-fill: rgba(21, 188, 223, 0.22);
+  --ui-info-label: #72ddf3;
+
+  /* ========================= 圆角与胶囊 ========================= */
+  /* 小档位仍留给控件内部细节（勾选框、指示条） */
+  --ui-radius-1: 4px;
+  --ui-radius-2: 8px;
+  --ui-radius-3: 10px;
+  --ui-radius-4: 12px;
+  --ui-radius-5: 14px;
+  /* 面板 / 大弹窗：Vantage 规格的 clamp 档位（12–18px） */
+  --ui-radius-panel: clamp(12px, 1.52vh, 18px);
+  /* 胶囊：按钮 / 导航项 / 标签 / 输入控件 */
+  --ui-radius-pill: 999px;
+  /* 必要图形（头像、圆点）专用的圆形档位 */
+  --ui-radius-circle: 50%;
+
+  /* ===================== 标题（全大写 + 紧行距 + 微字距） ===================== */
+  --ui-heading-transform: uppercase;
+  --ui-heading-tracking: 0.01em;
+  --ui-heading-leading: 0.98;
+
+  /* ============================== 动效 ============================== */
+  --ui-duration-fast: 140ms;
+  --ui-duration-base: 240ms;
+  --ui-duration-slow: 380ms;
+  --ui-ease-standard: cubic-bezier(0.32, 0.72, 0, 1);
+  --ui-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ============================== 字体 ============================== */
+  /* 字体令牌本轮未改（用户没有提字体） */
+  --ui-font-display: 'Quantico', 'Arial Narrow', sans-serif;
+  --ui-font-sans: 'Quantico', 'Arial Narrow', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  --ui-font-mono: ui-monospace, 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+
+  --ui-font-size-caption: 12px;
+  --ui-font-size-sm: 13px;
+  --ui-font-size-base: 14px;
+  --ui-font-size-lg: 16px;
+  --ui-font-size-title: 20px;
+  --ui-font-size-display: 28px;
+
+  --ui-font-weight-regular: 400;
+  --ui-font-weight-medium: 500;
+  --ui-font-weight-semibold: 600;
+  --ui-font-weight-bold: 700;
+
+  --ui-line-height-tight: 1.25;
+  --ui-line-height-base: 1.55;
+  --ui-line-height-loose: 1.75;
+
+  /* ============================== 间距 ============================== */
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 24px;
+  --ui-space-6: 32px;
+
+  /* ============================== 阴影 ============================== */
+  /* 三层玻璃阴影：投影（浮起）+ 内高光（玻璃边）+ 外描边（与背景分界）。
+     投影与外描边的底色不再是纯黑（纯黑会把整块面板压向黑）：随基色转蓝调、减淡一点，
+     依据（用户原话）：「太偏向黑色了，把颜色拉回来一些，不然看着很暗」 */
+  --ui-shadow-1:
+    0 2px 10px rgba(4, 8, 14, 0.4), 0 0 0 3px rgba(255, 255, 255, 0.035) inset, 0 0 0 1px rgba(4, 8, 14, 0.66);
+  --ui-shadow-2:
+    0 12px 32px rgba(4, 8, 14, 0.52), 0 0 0 3px rgba(255, 255, 255, 0.035) inset, 0 0 0 1px rgba(4, 8, 14, 0.66);
+  --ui-shadow-3:
+    0 24px 60px rgba(4, 8, 14, 0.6), 0 0 0 3px rgba(255, 255, 255, 0.035) inset, 0 0 0 1px rgba(4, 8, 14, 0.66);
+
+  /* ------------------------- 悬浮 / 抬升（本轮新增） -------------------------
+     依据（用户原话）：「ui 互动效果显著一点，可以适当增加悬浮，阴影等效果」。
+     取舍原则（写进注释，避免后人再纠结）：玻璃配方取自 Apple，而 **Apple 的玻璃本身没有阴影**
+     （实测参照页 computed box-shadow 为 none）。用户这次明确要「加悬浮阴影」，两者的调和方式是：
+       · 只给**交互态**（hover / 按下）与**浮层**（模态、抽屉、气泡）加阴影；
+       · 作为**底板**的玻璃条（侧栏 / 顶栏）继续保持无阴影。
+     Apple 自己的 modal 也带阴影，只有「压在内容上的玻璃条」不带 —— 所以这不算背离参照。
+     浮层分级：浮层 1（气泡 / 通知，= --ui-shadow-2）< 浮层 2（抽屉，= --ui-shadow-3）
+               < 浮层 3（模态，= --ui-shadow-4）。 */
+  --ui-shadow-4:
+    0 32px 80px rgba(4, 8, 14, 0.66), 0 0 0 3px rgba(255, 255, 255, 0.04) inset, 0 0 0 1px rgba(4, 8, 14, 0.7);
+  /* 交互态抬升：卡片 hover 用它，比静态 shadow-1 重、比浮层轻 */
+  --ui-shadow-hover: 0 10px 26px rgba(4, 8, 14, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  /* 位移令牌：卡片用 -2px（明显但不过分），按钮 / 导航项用 -1px（控件小，多了会跳） */
+  --ui-lift-hover: translateY(-2px);
+  --ui-lift-hover-sm: translateY(-1px);
+
+  /* =========================== 布局与层级 =========================== */
+  --ui-layout-navbar-height: 56px;
+  --ui-layout-prose-max: 760px; /* 对话 / 长文阅读行宽上限 */
+  /* 对话页主区「内容列」宽度：消息流 / 输入区 / 智能体选择共用一列并居中，
+     取自参照页 https://chat.deepseek.com/ 的实测值（内容列 840px 居中）。
+     与 prose-max 分开命名：这是对话页的主区列宽，不改变长文阅读行宽的含义。 */
+  --ui-layout-content-max: 840px;
+  --ui-layout-sidebar-width: 232px;
+  --ui-layout-sidebar-collapsed-width: 72px;
+  /* 移动断点：登录 Hero 与介绍页共用（≤700px 走移动版式） */
+  --ui-breakpoint-mobile: 700px;
+
+  --ui-z-navbar: 100;
+  --ui-z-drawer: 900;
+  --ui-z-modal: 1000;
+  --ui-z-tooltip: 1100;
+  --ui-z-toast: 1200;
+
+  /* ====================== 焦点环 / 滚动条 / 选区 ====================== */
+  /* 焦点环的底圈必须是**颜色**（不能是渐变），否则整条 box-shadow 会被判无效 */
+  --ui-focus-ring: 0 0 0 2px var(--ui-bg-void), 0 0 0 4px var(--ui-primary);
+
+  --ui-scrollbar-size: 10px;
+  --ui-scrollbar-thumb: rgba(255, 255, 255, 0.22);
+  --ui-scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
+  --ui-scrollbar-track: transparent;
+  --ui-selection-bg: rgba(21, 188, 223, 0.34);
+  --ui-selection-text: #ffffff;
+
+  /* ======================= 登录 Hero ======================= */
+  /* 背景交给全局视频：Hero 自己不铺底 */
+  --ui-hero-bg: transparent;
+  --ui-hero-min-height: 100svh;
+  /* Hero 上的品牌字与 logo 底：深底上一律白字 / 白色 logo 块 */
+  --ui-hero-ink: #ffffff;
+  --ui-hero-logo-fill: #ffffff;
+  /* 移动端展开菜单的文字色 */
+  --ui-hero-menu-ink: #f2f4f7;
+  /* 压在视频上的白色文字 / 描边（桌面按钮与汉堡条） */
+  --ui-hero-on-video: #ffffff;
+  --ui-hero-contact-hover: rgba(255, 255, 255, 0.16);
+  --ui-hero-contact-hover-strong: rgba(255, 255, 255, 0.28);
+  --ui-hero-nav-gap: clamp(20px, 5vw, 56px);
+  --ui-hero-nav-padding: clamp(20px, 3vw, 38px) clamp(20px, 4vw, 48px) 0;
+  --ui-hero-link-gap: 34px;
+  --ui-hero-font-brand: clamp(22px, 5vw, 30px);
+  --ui-hero-font-link: clamp(12px, 2.4vw, 15px);
+  --ui-hero-font-title: min(clamp(34px, 7.6vw, 80px), 9.2vh);
+  --ui-hero-font-title-mobile: clamp(34px, 10vw, 56px);
+  --ui-hero-font-cta: clamp(13px, 2.2vw, 16px);
+  --ui-hero-indent: min(238px, 28vw);
+  --ui-hero-title-padding: min(clamp(40px, 9vw, 120px), 9vh) 20px min(clamp(24px, 4vw, 44px), 5vh)
+    clamp(20px, 9vw, 118px);
+  --ui-hero-title-padding-mobile: 0 20px 28px 20px;
+  --ui-hero-title-margin-top-mobile: 360px;
+  --ui-hero-cta-left: calc(clamp(20px, 9vw, 118px) + min(238px, 28vw));
+  --ui-hero-cta-left-mobile: calc(20px + min(238px, 28vw));
+  --ui-hero-cta-bottom: min(clamp(36px, 6vw, 80px), 7vh);
+  /* 仅桌面：左侧 70% 的渐隐遮罩，让标题压在视频上仍然可读（随基色转蓝调、略减薄） */
+  --ui-hero-mask: linear-gradient(
+    90deg,
+    rgba(13, 19, 27, 0.84) 0%,
+    rgba(13, 19, 27, 0.68) 55%,
+    rgba(13, 19, 27, 0.26) 78%,
+    rgba(13, 19, 27, 0) 100%
+  );
+  /* 强调色元素的发光（Hero CTA / 介绍页按钮） */
+  --ui-accent-glow: drop-shadow(0 10px 22px rgba(15, 163, 194, 0.6));
+  --ui-accent-glow-hover: drop-shadow(0 14px 28px rgba(15, 163, 194, 0.85));
+
+  /* ======================= 介绍页 About ======================= */
+  /* 视频已升为全局背景，介绍页不再自己铺底 */
+  --ui-about-bg: transparent;
+  --ui-about-padding: clamp(60px, 10vw, 140px) 0 clamp(30px, 5vw, 70px) clamp(20px, 9vw, 118px);
+  --ui-about-indent: min(160px, 18vw);
+  --ui-about-font-title: clamp(34px, 6.5vw, 72px);
+  --ui-about-font-body: clamp(14px, 1.6vw, 17px);
+  --ui-about-media-max: 644px;
+  /* 右栏装饰面板的青色光晕（原为视频染色层，视频移交全局背景后只留光晕） */
+  --ui-about-tint: rgba(21, 188, 223, 0.35);
+
+  /* ====================== 平台字标（三处共用） ====================== */
+  /* 依据（用户原话）：「织流的平台名我希望字体统一使用 about 页面的 plant form
+     （即 PLATFORM）这个单词风格的字样，大小和图标大小比例要合适，视觉要美观」。
+     字形：.ui-wordmark 用 --ui-font-sans——该栈的首位族就是 Quantico，与 About 的 PLATFORM
+     （.ui-heading 用的 --ui-font-display）同款；中文「织流」在 Quantico 里没有字形，
+     由同一个栈回落到栈内声明的 CJK 族（Microsoft YaHei / PingFang SC），
+     所以整个字标只声明一次 font-family，侧栏 / 登录页 / 介绍页的计算值完全一致。
+     尺寸：与 38px 的 logo 圆配平，且整串（含中文与分隔点）必须放得进 232px 的侧栏——
+     实测 18px 时字标宽 164px、可用只有 150px，会溢出被裁，故取 16px（实测约 146px）。 */
+  --ui-brand-font-size: 16px;
+
+  /* ============== 登录卡（桌面绝对定位在 Hero 右侧） ============== */
+  /* 依据（用户原话）：「目前登录页面的登录表单往左再移一下，目前视觉上有点靠右」。
+     reserve 把「卡片宽度 + 右侧留白」合成一个量：.hero__content 用
+     calc(100% - reserve) 限宽，大标题与卡片之间就恒留一个 --ui-space-5，任何宽度都不相交。 */
+  --ui-login-card-width: 360px;
+  --ui-login-card-right: clamp(32px, 8vw, 140px);
+  --ui-login-reserve: calc(var(--ui-login-card-width) + var(--ui-login-card-right) + var(--ui-space-5));
+
+  /* ===================== 点缀色：活力橙 + 紫 + 青绿（深色套） ===================== */
+  /* 依据（用户原话）：「色彩可以丰富一点，要有活力，比如在一些地方加一点活力橙啊这些颜色」。
+     品牌主色仍是 --ui-primary（青），橙/紫只做点缀，不替换主色。
+     深底上的取值一律提亮：橙字放到深底上不能发闷。 */
+  --ui-accent-orange: #ff8a3d;
+  --ui-accent-orange-text: #ffb37a;
+  --ui-accent-orange-fill: rgba(255, 138, 61, 0.18);
+  --ui-accent-orange-stroke: rgba(255, 138, 61, 0.55);
+  --ui-accent-violet: #a78bfa;
+  --ui-accent-teal: #2ee6c5;
+
+  /* ============ 背景元素：视频之上的柔和多色光晕（纯 CSS 渐变，不新增图片文件） ============ */
+  /* 依据（用户原话）：「并在背景上增加一些背景」。
+     深色主题保持现有视频观感，只在视频之上叠一层低透明度的彩晕做小幅增强。 */
+  --ui-app-glow:
+    radial-gradient(46% 38% at 14% 4%, var(--ui-accent-teal), transparent 62%),
+    radial-gradient(50% 42% at 86% 0%, var(--ui-accent-violet), transparent 64%),
+    radial-gradient(44% 34% at 58% 100%, var(--ui-accent-orange), transparent 66%);
+  --ui-app-glow-opacity: 0.22;
+  /* 视频自身的不透明度：深色主题保持原样 */
+  --ui-app-video-opacity: 1;
+  /* 浅色覆盖层：深色主题为全透明（等于不存在，观感一字不变） */
+  --ui-app-veil: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(245, 245, 247, 0));
+}
+
+/* ==========================================================================
+   明亮主题（Apple 官网风格）
+   --------------------------------------------------------------------------
+   依据（用户原话）：「改完这些再做一版明亮主题的，效果就按照苹果官网做，色彩可以丰富一点，
+   要有活力，比如在一些地方加一点活力橙啊这些颜色，并在背景上增加一些背景」。
+   做法：**只覆盖值**。:root（深色玻璃）一字未动，.ui-glass / .ui-glass-veil 的结构也未动，
+   所以既有深色主题保持原样，切换只换这一块里的取值。
+   明亮玻璃配方与参照页实测一致：blur(20px) saturate(180%) + 单一 rgba(250, 250, 252, 0.8)。
+   正文（--ui-text-primary / secondary / tertiary）实测对比度 ≥ 7:1（见回报里的实测数字）。
+   ========================================================================== */
+html[data-theme='light'] {
+  color-scheme: light;
+
+  /* ============================ 背景分层 ============================ */
+  /* 白 #ffffff 与 #f5f5f7 两档分层：html 画布是后者，内容区靠浅色覆盖层收到前者 */
+  --ui-bg-void: #f5f5f7;
+  --ui-app-scrim: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(245, 245, 247, 0.74));
+  --ui-app-fallback:
+    radial-gradient(ellipse at 30% 18%, rgba(21, 188, 223, 0.16), transparent 62%),
+    linear-gradient(180deg, #ffffff 0%, #f5f5f7 100%);
+  /* 内容区渐隐层（同步复核，依据用户原话「层次感最好鲜明一点」）：
+     原来收口用的是「白 → #fafafc → #f5f5f7」三色混用，末段偏灰、与光晕叠加后
+     容易看出「上亮下暗」的台阶。本轮统一成**同一个中性色 #f5f5f7 的透明度递进**
+     （0 → .42 → .6 → .74），色相不再中途改换，只在透明度上平滑加厚：
+     既保住「收口」的职责，又让内容区底色落在页面底那一档（而不是被白色洗成纯白），
+     卡片因此浮得起来。 */
+  --ui-content-veil: linear-gradient(
+    180deg,
+    rgba(245, 245, 247, 0) 0%,
+    rgba(245, 245, 247, 0.42) 22%,
+    rgba(245, 245, 247, 0.6) 58%,
+    rgba(245, 245, 247, 0.74) 100%
+  );
+
+  /* ===================== 玻璃族：Apple 浅色配方（只换值） ===================== */
+  /* 层次：卡片与底必须是两档色，否则「玻璃与底糊成一张白纸」。
+     依据（用户原话）：「层次感最好鲜明一点」——
+     原来的卡片玻璃是 rgba(250, 250, 252, .8)，与页面底 #f5f5f7 几乎同色，
+     且唯一有色的一层（光晕）又淡又只在角上，所以整页看着是一张白纸。
+     本轮把卡片/面板的玻璃整体提到**纯白系**（下面四项），页面底仍是 #f5f5f7，
+     于是白卡片浮在浅灰底上；实测的明度差见回报（改前 → 改后）。 */
+  --ui-glass-blur: saturate(180%) blur(20px);
+  --ui-glass-bg: rgba(255, 255, 255, 0.85);
+  --ui-glass-bg-strong: rgba(255, 255, 255, 0.92);
+  --ui-glass-bg-soft: rgba(255, 255, 255, 0.7);
+  --ui-glass-bg-inset: rgba(250, 250, 252, 0.78);
+  --ui-glass-shadow-2: 0 12px 32px rgba(15, 18, 24, 0.14);
+  --ui-glass-bg-fallback: rgba(255, 255, 255, 0.96);
+  --ui-glass-bg-strong-fallback: rgba(255, 255, 255, 0.97);
+  --ui-bg-skeleton: rgba(0, 0, 0, 0.06);
+
+  /* ============================== 遮罩 ============================== */
+  --ui-mask-1: rgba(15, 18, 24, 0.16);
+  --ui-mask-2: rgba(15, 18, 24, 0.26);
+  --ui-mask-3: rgba(15, 18, 24, 0.42);
+
+  /* ======================== 描边四级坡 ======================== */
+  /* 浅底上用**黑色透明度**递进——白色描边在浅底上等于看不见 */
+  --ui-border-l1: rgba(0, 0, 0, 0.08);
+  --ui-border-l2: rgba(0, 0, 0, 0.12);
+  --ui-border-l3: rgba(0, 0, 0, 0.18);
+  --ui-border-l4: rgba(0, 0, 0, 0.28);
+
+  /* ============================ 品牌色 ============================ */
+  /* 主色仍是 #15BCDF（用户此前选定）；它是元素填充色，不随主题改。
+     下面几项是**在浅底上作为文字/描边**时用的派生档：浅底必须压暗才读得清。 */
+  --ui-primary-hover: #0fa3c2;
+  --ui-primary-stroke: #0fa3c2;
+  --ui-primary-text: #0a6f85;
+  --ui-primary-inverted: #ffffff;
+  --ui-text-on-accent: #06222b;
+
+  /* ======================= 交互态 ======================= */
+  --ui-interactive-hover: rgba(21, 188, 223, 0.12);
+  --ui-interactive-active: rgba(21, 188, 223, 0.2);
+  --ui-interactive-hover-solid: linear-gradient(145deg, rgba(21, 188, 223, 0.22), rgba(21, 188, 223, 0.12));
+  /* hover 反馈加强一档（与 :root 同名注释同一理由） */
+  --ui-interactive-hover-strong: rgba(21, 188, 223, 0.2);
+
+  /* ============================== 按钮 ============================== */
+  --ui-btn-primary-fill: var(--ui-primary);
+  --ui-btn-primary-hover: var(--ui-primary-hover);
+  --ui-btn-info-fill: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(240, 240, 244, 0.78));
+  --ui-btn-elevated-fill: var(--ui-glass-bg-strong);
+  --ui-btn-floating-fill: var(--ui-glass-bg-strong);
+  --ui-btn-floating-hover: linear-gradient(145deg, rgba(255, 255, 255, 1), rgba(238, 238, 242, 0.9));
+  --ui-btn-ghost-active-fill: rgba(0, 0, 0, 0.08);
+
+  /* ============================= 文本层级 ============================= */
+  /* Apple 浅色体系（主 #1d1d1f / 次 #6e6e73 / 说明 #86868b）在此之上把**正文**两档压暗：
+     次 #6e6e73 在白底只有约 5:1，达不到正文 ≥7:1 的下限，故正文不用它，
+     它退到 caption（辅助文字）一档，说明 #86868b 退到 dimmed 一档。 */
+  --ui-text-primary: #1d1d1f;
+  --ui-text-secondary: #3f3f43;
+  --ui-text-tertiary: #4c4c50;
+  --ui-text-caption: #6e6e73;
+  --ui-text-dimmed: #86868b;
+  --ui-text-inverted: #ffffff;
+  --ui-text-link: #0a6f85;
+  --ui-text-link-hover: #06414e;
+
+  /* =========================== 状态语义色 =========================== */
+  /* 浅底上标签色压暗、填充色减淡，避免刺眼 */
+  --ui-warn-fill: rgba(214, 130, 12, 0.14);
+  --ui-warn-label: #8a5200;
+  --ui-danger-fill: rgba(200, 48, 36, 0.12);
+  --ui-danger-label: #b3261e;
+  --ui-success-fill: rgba(22, 140, 96, 0.12);
+  --ui-success-label: #0f6b4a;
+  --ui-info-fill: rgba(21, 188, 223, 0.14);
+  --ui-info-label: #0a6f85;
+
+  /* ============================== 阴影 ============================== */
+  --ui-shadow-1:
+    0 2px 10px rgba(15, 18, 24, 0.08), 0 0 0 3px rgba(255, 255, 255, 0.5) inset, 0 0 0 1px rgba(15, 18, 24, 0.06);
+  --ui-shadow-2:
+    0 12px 32px rgba(15, 18, 24, 0.12), 0 0 0 3px rgba(255, 255, 255, 0.5) inset, 0 0 0 1px rgba(15, 18, 24, 0.06);
+  --ui-shadow-3:
+    0 24px 60px rgba(15, 18, 24, 0.16), 0 0 0 3px rgba(255, 255, 255, 0.5) inset, 0 0 0 1px rgba(15, 18, 24, 0.06);
+  /* 浮层最重一档（模态）；分级与「只给交互态/浮层加阴影」的原则见 :root 同名的注释 */
+  --ui-shadow-4:
+    0 32px 80px rgba(15, 18, 24, 0.22), 0 0 0 3px rgba(255, 255, 255, 0.55) inset, 0 0 0 1px rgba(15, 18, 24, 0.08);
+  /* 交互态抬升：浅底上阴影要更重才看得见（上面四档都偏轻） */
+  --ui-shadow-hover: 0 10px 24px rgba(15, 18, 24, 0.14), 0 0 0 1px rgba(15, 18, 24, 0.08) inset;
+
+  /* ====================== 焦点环 / 滚动条 / 选区 ====================== */
+  --ui-focus-ring: 0 0 0 2px var(--ui-bg-void), 0 0 0 4px var(--ui-primary);
+  --ui-scrollbar-thumb: rgba(0, 0, 0, 0.22);
+  --ui-scrollbar-thumb-hover: rgba(0, 0, 0, 0.4);
+  --ui-selection-bg: rgba(21, 188, 223, 0.26);
+  --ui-selection-text: #06222b;
+
+  /* ======================= 登录 Hero（浅底 → 深字） ======================= */
+  --ui-hero-ink: #1d1d1f;
+  --ui-hero-logo-fill: #1d1d1f;
+  --ui-hero-menu-ink: #1d1d1f;
+  --ui-hero-on-video: #1d1d1f;
+  --ui-hero-contact-hover: rgba(0, 0, 0, 0.06);
+  --ui-hero-contact-hover-strong: rgba(0, 0, 0, 0.12);
+  --ui-hero-mask: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.78) 55%,
+    rgba(255, 255, 255, 0.3) 78%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  --ui-accent-glow: drop-shadow(0 10px 22px rgba(15, 163, 194, 0.42));
+  --ui-accent-glow-hover: drop-shadow(0 14px 28px rgba(15, 163, 194, 0.6));
+
+  /* ======================= 介绍页 About ======================= */
+  --ui-about-tint: rgba(21, 188, 223, 0.28);
+
+  /* ===================== 点缀色（浅底上压暗，避免刺眼） ===================== */
+  --ui-accent-orange: #ff7a1a;
+  --ui-accent-orange-text: #b8460a;
+  --ui-accent-orange-fill: rgba(255, 122, 26, 0.12);
+  --ui-accent-orange-stroke: rgba(255, 122, 26, 0.42);
+  --ui-accent-violet: #7c5cff;
+  --ui-accent-teal: #0aa88f;
+
+  /* ============ 背景元素：浅色低饱和彩晕 + 视频压成很淡的底层 ============ */
+  /* 光晕本轮加重并铺开（依据用户原话：「层次感最好鲜明一点」「ui 互动效果显著一点」）：
+     原来三片都小、透明度 0.16，且只在左上角一带，等于没有；
+     现在三片各占一个象限并互相搭接——左上青 / 右上紫 / 底部中央暖橙，
+     把整页铺满。颜色**只用项目已有的点缀色令牌**（teal / violet / orange），不新造颜色。 */
+  --ui-app-glow:
+    radial-gradient(64% 54% at 6% -8%, var(--ui-accent-teal), transparent 68%),
+    radial-gradient(66% 56% at 98% -6%, var(--ui-accent-violet), transparent 70%),
+    radial-gradient(88% 52% at 50% 108%, var(--ui-accent-orange), transparent 72%);
+  --ui-app-glow-opacity: 0.42;
+  --ui-app-video-opacity: 0.12;
+  /* 浅色覆盖层（94% 白）：把视频收成几乎看不见的底纹，
+     同时把页面底色抬到 #f0f0f0 以上——正文 ≥7:1 的下限靠它保住 */
+  --ui-app-veil: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.94) 55%,
+    rgba(245, 245, 247, 0.95) 100%
+  );
+}
+
+/* ==========================================================================
+   滚动条：深色界面用浅色半透明滚动条
+   ========================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-scrollbar-thumb) var(--ui-scrollbar-track);
+}
+
+::-webkit-scrollbar {
+  width: var(--ui-scrollbar-size);
+  height: var(--ui-scrollbar-size);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ui-scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ui-scrollbar-thumb);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--ui-radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-scrollbar-thumb-hover);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--ui-scrollbar-track);
+}
+
+::selection {
+  background: var(--ui-selection-bg);
+  color: var(--ui-selection-text);
+}

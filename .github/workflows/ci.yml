@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    # 前端工程在子目录：仓库根放的是 platform-web/ 与 picture/
+    working-directory: platform-web
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: platform-web/package-lock.json
+
+      # ★ 硬约束：picture/ 必须与 platform-web/ 同级，src/lib/avatars.js 在构建期直接 import 它。
+      #   仓库已包含该目录；这一步只做「缺失即快速失败」的护栏，避免有人把它移走。
+      - name: 校验 picture/ 与 platform-web/ 同级
+        working-directory: .
+        run: test -d picture && test -f picture/毕设选题与立项顾问.jpg
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 门禁（lint + format 检查 + 单测 + 构建）
+        run: npm run verify

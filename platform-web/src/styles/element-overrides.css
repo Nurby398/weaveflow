@@ -1,0 +1,416 @@
+/**
+ * Element Plus 主题桥：--el-* → --ui-*
+ * ==================================================================
+ * 织流的视觉真源是 src/styles/tokens.css 的 --ui-* 令牌（只读，本文件不复制、不覆盖它的值）。
+ * Element Plus 的每一层外观都从 --el-* 变量取值，所以把 EP 的变量接到织流令牌上，
+ * 就能让 EP 组件长得和自建组件一样——「技术栈里用 EP，视觉上仍是织流」。
+ *
+ * 三条纪律：
+ *   1. 只引用 var(--ui-*)，不出现任何色值 / 字号字面量（tests/tokens.spec.js 会拦下来）；
+ *   2. 不定义新的 --ui-*：tokens.css 是唯一真源，这里只能「接线」；
+ *   3. 本文件只承担两件事——变量桥，以及「被 teleport 出组件树、scoped 样式够不到的浮层」
+ *      （遮罩 / 气泡）。单个组件内部的 EP 结构由该组件自己的 scoped :deep() 就地覆盖，
+ *      离使用现场更近，也避免这里堆成第二个样式表。
+ *
+ * 选择器为什么长这样：
+ *   - 基础令牌用 `:root:root`，组件变量用 `:root .el-xxx`，都是为了让本文件的规则
+ *     稳定压过 element-plus 自带的同名规则（EP 的基础令牌写在 :root，组件变量写在
+ *     各自的 `.el-xxx{...}` 里，同特异度时只能靠顺序决胜——这里不赌顺序）。
+ *   - 浮层同理：遮罩、气泡挂在 body 上，组件里带 data-v 的 scoped 规则够不到。
+ *
+ * 加载顺序：main.js 里 element-plus 的样式在前，本文件在后。
+ * ==================================================================
+ */
+
+/* ============================== 基础令牌 ============================== */
+
+:root:root {
+  /* ---- 白 / 反相墨色 ---- */
+  --el-color-white: var(--ui-primary-inverted);
+  --el-color-black: var(--ui-text-inverted);
+
+  /* ---- 主色阶 ----
+     织流的青只有三档（primary → hover → text 依次变亮），
+     EP 需要 light-3/5/7/8/9 五档，因此浅档统一落到半透明青色填充上。 */
+  --el-color-primary: var(--ui-primary);
+  --el-color-primary-light-3: var(--ui-primary-hover);
+  --el-color-primary-light-5: var(--ui-primary-text);
+  --el-color-primary-light-7: var(--ui-info-fill);
+  --el-color-primary-light-8: var(--ui-interactive-hover);
+  --el-color-primary-light-9: var(--ui-interactive-hover);
+  --el-color-primary-dark-2: var(--ui-primary-stroke);
+
+  /* ---- 语义色：label 为实色，-fill 为同色半透明底 ---- */
+  --el-color-success: var(--ui-success-label);
+  --el-color-success-light-3: var(--ui-success-label);
+  --el-color-success-light-5: var(--ui-success-fill);
+  --el-color-success-light-7: var(--ui-success-fill);
+  --el-color-success-light-8: var(--ui-success-fill);
+  --el-color-success-light-9: var(--ui-success-fill);
+  --el-color-success-dark-2: var(--ui-success-label);
+
+  --el-color-warning: var(--ui-warn-label);
+  --el-color-warning-light-3: var(--ui-warn-label);
+  --el-color-warning-light-5: var(--ui-warn-fill);
+  --el-color-warning-light-7: var(--ui-warn-fill);
+  --el-color-warning-light-8: var(--ui-warn-fill);
+  --el-color-warning-light-9: var(--ui-warn-fill);
+  --el-color-warning-dark-2: var(--ui-warn-label);
+
+  --el-color-danger: var(--ui-danger-label);
+  --el-color-danger-light-3: var(--ui-danger-label);
+  --el-color-danger-light-5: var(--ui-danger-fill);
+  --el-color-danger-light-7: var(--ui-danger-fill);
+  --el-color-danger-light-8: var(--ui-danger-fill);
+  --el-color-danger-light-9: var(--ui-danger-fill);
+  --el-color-danger-dark-2: var(--ui-danger-label);
+
+  --el-color-error: var(--ui-danger-label);
+  --el-color-error-light-3: var(--ui-danger-label);
+  --el-color-error-light-5: var(--ui-danger-fill);
+  --el-color-error-light-7: var(--ui-danger-fill);
+  --el-color-error-light-8: var(--ui-danger-fill);
+  --el-color-error-light-9: var(--ui-danger-fill);
+  --el-color-error-dark-2: var(--ui-danger-label);
+
+  --el-color-info: var(--ui-info-label);
+  --el-color-info-light-3: var(--ui-info-label);
+  --el-color-info-light-5: var(--ui-info-fill);
+  --el-color-info-light-7: var(--ui-info-fill);
+  --el-color-info-light-8: var(--ui-info-fill);
+  --el-color-info-light-9: var(--ui-info-fill);
+  --el-color-info-dark-2: var(--ui-info-label);
+
+  /* ---- 字体 ---- */
+  --el-font-family: var(--ui-font-sans);
+  --el-font-size-extra-large: var(--ui-font-size-title);
+  --el-font-size-large: var(--ui-font-size-lg);
+  --el-font-size-medium: var(--ui-font-size-base);
+  --el-font-size-base: var(--ui-font-size-base);
+  --el-font-size-small: var(--ui-font-size-sm);
+  --el-font-size-extra-small: var(--ui-font-size-caption);
+  --el-font-weight-primary: var(--ui-font-weight-medium);
+  --el-font-line-height-primary: var(--ui-line-height-base);
+  --el-svg-monochrome-grey: var(--ui-text-dimmed);
+
+  /* ---- 圆角 ---- */
+  --el-border-radius-base: var(--ui-radius-2);
+  --el-border-radius-small: var(--ui-radius-1);
+  --el-border-radius-round: var(--ui-radius-pill);
+  --el-border-radius-circle: var(--ui-radius-circle);
+
+  /* ---- 描边 ---- */
+  --el-border-width: 1px;
+  --el-border-style: solid;
+  --el-border-color: var(--ui-border-l2);
+  --el-border-color-light: var(--ui-border-l2);
+  --el-border-color-lighter: var(--ui-border-l1);
+  --el-border-color-extra-light: var(--ui-border-l1);
+  --el-border-color-dark: var(--ui-border-l3);
+  --el-border-color-darker: var(--ui-border-l4);
+  --el-border-color-hover: var(--ui-border-l3);
+  --el-border: 1px solid var(--ui-border-l2);
+
+  /* ---- 背景与填充 ---- */
+  --el-bg-color: var(--ui-bg-layer-1);
+  --el-bg-color-page: var(--ui-bg-void);
+  --el-bg-color-overlay: var(--ui-bg-overlay);
+  --el-fill-color: var(--ui-bg-layer-3);
+  --el-fill-color-light: var(--ui-bg-layer-2);
+  --el-fill-color-lighter: var(--ui-bg-layer-2);
+  --el-fill-color-extra-light: var(--ui-bg-layer-1);
+  --el-fill-color-dark: var(--ui-bg-skeleton);
+  --el-fill-color-darker: var(--ui-bg-skeleton);
+  --el-fill-color-blank: var(--ui-bg-overlay);
+
+  /* ---- 文本 ---- */
+  --el-text-color-primary: var(--ui-text-primary);
+  --el-text-color-regular: var(--ui-text-secondary);
+  --el-text-color-secondary: var(--ui-text-caption);
+  --el-text-color-placeholder: var(--ui-text-dimmed);
+  --el-text-color-disabled: var(--ui-text-dimmed);
+
+  /* ---- 禁用 ---- */
+  --el-disabled-bg-color: var(--ui-bg-skeleton);
+  --el-disabled-text-color: var(--ui-text-dimmed);
+  --el-disabled-border-color: var(--ui-border-l1);
+
+  /* ---- 阴影 ---- */
+  --el-box-shadow: var(--ui-shadow-2);
+  --el-box-shadow-light: var(--ui-shadow-2);
+  --el-box-shadow-lighter: var(--ui-shadow-1);
+  --el-box-shadow-dark: var(--ui-shadow-3);
+
+  /* ---- 遮罩 ---- */
+  --el-overlay-color: var(--ui-mask-2);
+  --el-overlay-color-light: var(--ui-mask-2);
+  --el-overlay-color-lighter: var(--ui-mask-2);
+  --el-mask-color: var(--ui-mask-2);
+  --el-mask-color-extra-light: var(--ui-mask-1);
+
+  /* ---- 动效与层级 ---- */
+  --el-transition-duration: var(--ui-duration-base);
+  --el-transition-duration-fast: var(--ui-duration-fast);
+  --el-transition-function-ease-in-out-bezier: var(--ui-ease-standard);
+  --el-transition-function-fast-bezier: var(--ui-ease-out);
+  --el-transition-all: all var(--ui-duration-fast) var(--ui-ease-standard);
+  --el-transition-fade: opacity var(--ui-duration-fast) var(--ui-ease-standard);
+  --el-transition-md-fade:
+    transform var(--ui-duration-base) var(--ui-ease-standard), opacity var(--ui-duration-base) var(--ui-ease-standard);
+  --el-transition-fade-linear: opacity var(--ui-duration-fast) linear;
+  --el-transition-border: border-color var(--ui-duration-fast) var(--ui-ease-standard);
+  --el-transition-box-shadow: box-shadow var(--ui-duration-fast) var(--ui-ease-standard);
+  --el-transition-color: color var(--ui-duration-fast) var(--ui-ease-standard);
+  --el-index-popper: var(--ui-z-tooltip);
+
+  /* ---- 控件尺寸：28 / 32 / 36 由上间距令牌相加得到 ---- */
+  --el-component-size: var(--ui-space-6);
+  --el-component-size-large: calc(var(--ui-space-3) + var(--ui-space-5));
+  --el-component-size-small: calc(var(--ui-space-3) + var(--ui-space-4));
+}
+
+/* ============================ 组件级令牌 ============================
+   EP 把组件变量写在各自的 `.el-xxx{...}` 里，所以这些映射也必须挂在组件选择器上
+   才能生效（`:root .el-xxx` 的特异度高于 EP 自己的规则，与加载顺序无关）。 */
+
+/* ---- Button ---- */
+:root .el-button {
+  --el-button-size: calc(var(--ui-space-3) + var(--ui-space-5));
+  --el-button-font-weight: var(--ui-font-weight-medium);
+  --el-button-bg-color: transparent;
+  --el-button-text-color: var(--ui-text-label-secondary);
+  --el-button-border-color: transparent;
+  --el-button-hover-bg-color: var(--ui-interactive-hover);
+  --el-button-hover-text-color: var(--ui-text-label-primary);
+  --el-button-hover-border-color: transparent;
+  --el-button-hover-link-text-color: var(--ui-primary-hover);
+  --el-button-active-bg-color: var(--ui-btn-ghost-active-fill);
+  --el-button-active-color: var(--ui-text-label-primary);
+  --el-button-active-text-color: var(--ui-text-label-primary);
+  --el-button-active-border-color: transparent;
+  --el-button-disabled-bg-color: transparent;
+  --el-button-disabled-text-color: var(--ui-text-dimmed);
+  --el-button-disabled-border-color: transparent;
+  --el-button-outline-color: var(--ui-primary);
+  --el-button-divide-border-color: var(--ui-border-l1);
+}
+
+/* ---- Input ---- */
+:root .el-input {
+  --el-input-height: calc(var(--ui-space-3) + var(--ui-space-5));
+  --el-input-bg-color: var(--ui-bg-layer-3);
+  --el-input-text-color: var(--ui-text-label-primary);
+  --el-input-placeholder-color: var(--ui-text-dimmed);
+  --el-input-border-color: var(--ui-border-l2);
+  --el-input-hover-border-color: var(--ui-border-l3);
+  --el-input-focus-border-color: var(--ui-primary);
+  --el-input-border-radius: var(--ui-radius-2);
+  --el-input-icon-color: var(--ui-text-tertiary);
+  --el-input-clear-hover-color: var(--ui-text-label-primary);
+  --el-input-border: 1px solid var(--ui-border-l2);
+  --el-input-hover-border: 1px solid var(--ui-border-l3);
+  --el-input-focus-border: 1px solid var(--ui-primary);
+}
+
+/* ---- Tag（Badge 的底座） ---- */
+:root .el-tag {
+  --el-tag-font-size: var(--ui-font-size-caption);
+  --el-tag-bg-color: var(--ui-bg-layer-3);
+  --el-tag-text-color: var(--ui-text-label-tertiary);
+  --el-tag-border-color: var(--ui-border-l2);
+  --el-tag-hover-color: var(--ui-text-label-primary);
+  --el-tag-border-radius: var(--ui-radius-1);
+  --el-tag-border-radius-rounded: var(--ui-radius-pill);
+}
+
+/* ---- Empty ---- */
+:root .el-empty {
+  /* 图片盒与说明文字的间距由织流自己的 flex gap 统一控制，这里清掉 EP 的 margin 叠加 */
+  --el-empty-padding: var(--ui-space-6);
+  --el-empty-image-width: var(--ui-space-6);
+  --el-empty-description-margin-top: 0;
+  --el-empty-bottom-margin-top: 0;
+  --el-empty-fill-color-0: var(--ui-text-caption);
+  --el-empty-fill-color-1: var(--ui-border-l2);
+  --el-empty-fill-color-2: var(--ui-border-l2);
+  --el-empty-fill-color-3: var(--ui-border-l1);
+  --el-empty-fill-color-4: var(--ui-border-l1);
+  --el-empty-fill-color-5: var(--ui-bg-skeleton);
+  --el-empty-fill-color-6: var(--ui-bg-skeleton);
+  --el-empty-fill-color-7: var(--ui-bg-layer-2);
+  --el-empty-fill-color-8: var(--ui-bg-layer-2);
+  --el-empty-fill-color-9: var(--ui-bg-layer-1);
+}
+
+/* ---- Avatar ---- */
+:root .el-avatar {
+  --el-avatar-size: var(--ui-space-6);
+  --el-avatar-size-large: calc(var(--ui-space-4) + var(--ui-space-6));
+  --el-avatar-size-small: var(--ui-space-5);
+  --el-avatar-bg-color: var(--ui-btn-info-fill);
+  --el-avatar-text-color: var(--ui-text-label-secondary);
+  --el-avatar-text-size: var(--ui-font-size-sm);
+  --el-avatar-icon-size: var(--ui-font-size-lg);
+  --el-avatar-border-radius: var(--ui-radius-2);
+}
+
+/* ---- Tabs ---- */
+:root .el-tabs {
+  --el-tabs-header-height: calc(var(--ui-space-4) + var(--ui-space-5));
+}
+
+/* ---- Checkbox ---- */
+:root .el-checkbox {
+  --el-checkbox-font-size: var(--ui-font-size-sm);
+  --el-checkbox-font-weight: var(--ui-font-weight-regular);
+  --el-checkbox-text-color: var(--ui-text-label-secondary);
+  --el-checkbox-checked-text-color: var(--ui-text-label-primary);
+  --el-checkbox-disabled-checked-text-color: var(--ui-text-dimmed);
+  --el-checkbox-input-border: 1px solid var(--ui-border-l3);
+  --el-checkbox-input-border-color-hover: var(--ui-border-l4);
+  --el-checkbox-bg-color: var(--ui-bg-layer-3);
+  --el-checkbox-checked-bg-color: var(--ui-primary);
+  --el-checkbox-checked-input-border-color: var(--ui-primary);
+  --el-checkbox-checked-icon-color: var(--ui-primary-inverted);
+  --el-checkbox-disabled-input-fill: var(--ui-bg-skeleton);
+  --el-checkbox-disabled-border-color: var(--ui-border-l1);
+  --el-checkbox-disabled-icon-color: var(--ui-text-dimmed);
+  --el-checkbox-disabled-checked-input-fill: var(--ui-bg-skeleton);
+  --el-checkbox-disabled-checked-input-border-color: var(--ui-border-l1);
+  --el-checkbox-disabled-checked-icon-color: var(--ui-text-dimmed);
+  --el-checkbox-border-radius: var(--ui-radius-1);
+  --el-checkbox-input-width: var(--ui-space-3);
+  --el-checkbox-input-height: var(--ui-space-3);
+}
+
+/* ---- Select ---- */
+:root .el-select {
+  --el-select-font-size: var(--ui-font-size-base);
+  --el-select-input-font-size: var(--ui-font-size-base);
+  --el-select-input-color: var(--ui-text-label-primary);
+  --el-select-multiple-input-color: var(--ui-text-label-primary);
+  --el-select-border-color-hover: var(--ui-border-l3);
+  --el-select-input-focus-border-color: var(--ui-primary);
+  --el-select-close-hover-color: var(--ui-text-label-primary);
+  --el-select-disabled-color: var(--ui-text-dimmed);
+  --el-select-disabled-border: var(--ui-border-l1);
+}
+
+/* ---- Dialog（Modal 的底座） ---- */
+:root .el-dialog {
+  --el-dialog-bg-color: var(--ui-bg-overlay);
+  --el-dialog-box-shadow: var(--ui-shadow-4);
+  --el-dialog-border-radius: var(--ui-radius-panel);
+  --el-dialog-margin-top: var(--ui-space-5);
+  --el-dialog-padding-primary: var(--ui-space-5);
+  --el-dialog-title-font-size: var(--ui-font-size-lg);
+  --el-dialog-content-font-size: var(--ui-font-size-base);
+  --el-dialog-font-line-height: var(--ui-line-height-base);
+}
+
+/* ---- Drawer ---- */
+:root .el-drawer {
+  --el-drawer-bg-color: var(--ui-bg-overlay);
+  --el-drawer-padding-primary: var(--ui-space-5);
+  --el-drawer-dragger-size: var(--ui-space-1);
+}
+
+/* ---- Popover / Popper ---- */
+:root .el-popover {
+  --el-popover-bg-color: var(--ui-bg-overlay);
+  --el-popover-border-color: var(--ui-border-l3);
+  --el-popover-border-radius: var(--ui-radius-2);
+  --el-popover-font-size: var(--ui-font-size-caption);
+  --el-popover-padding: var(--ui-space-1) var(--ui-space-2);
+  --el-popover-padding-large: var(--ui-space-3);
+  --el-popover-title-font-size: var(--ui-font-size-sm);
+  --el-popover-title-text-color: var(--ui-text-label-primary);
+}
+
+/* ================= 被 teleport 出组件树的浮层（全局） =================
+   遮罩、气泡挂在 body 上，组件里带 data-v 的 scoped 规则匹配不到它们，只能写在这里。 */
+
+:root .el-overlay {
+  background-color: var(--ui-mask-2);
+}
+
+:root .el-popper {
+  font-family: var(--ui-font-sans);
+  color: var(--ui-text-label-primary);
+}
+
+:root .el-popper.is-light {
+  background: var(--ui-bg-overlay);
+  border: 1px solid var(--ui-border-l3);
+  border-radius: var(--ui-radius-2);
+  box-shadow: var(--ui-shadow-2);
+}
+
+:root .el-popper.is-light > .el-popper__arrow::before {
+  background: var(--ui-bg-overlay);
+  border-color: var(--ui-border-l3);
+}
+
+:root .el-popper.is-pure {
+  padding: 0;
+}
+
+/* EP 给相邻按钮加 12px 左外边距，织流的按钮间距一律由使用方（flex gap）控制 */
+:root .el-button + .el-button {
+  margin-left: 0;
+}
+
+/* ============ 自建组件里交给 EP 渲染、又挂在 body 上的浮层 ============
+   这些浮层同样够不到组件的 scoped 样式，外观写在这里；
+   组件用 EP 的 popper-class 参数把自己认领出来。 */
+
+/* ---- Tooltip 气泡（components/ui/Tooltip.vue → popper-class="ui-tooltip"） ---- */
+:root .ui-tooltip.el-popper {
+  max-width: 260px;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  background: var(--ui-bg-layer-3);
+  color: var(--ui-text-label-primary);
+  border: 1px solid var(--ui-border-l3);
+  border-radius: var(--ui-radius-2);
+  box-shadow: var(--ui-shadow-2);
+  font-size: var(--ui-font-size-caption);
+  line-height: var(--ui-line-height-base);
+  pointer-events: none;
+}
+
+/* ---- Select 下拉浮层（components/ui/Select.vue → popper-class="ui-select-dropdown"） ---- */
+:root .ui-select-dropdown {
+  padding: var(--ui-space-1);
+  background: var(--ui-bg-overlay);
+  border: 1px solid var(--ui-border-l3);
+  border-radius: var(--ui-radius-2);
+  box-shadow: var(--ui-shadow-2);
+}
+
+:root .ui-select-dropdown .el-select-dropdown__list {
+  padding: 0;
+}
+
+:root .ui-select-dropdown .el-select-dropdown__item {
+  height: auto;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--ui-radius-1);
+  color: var(--ui-text-label-secondary);
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-font-size-base);
+  line-height: var(--ui-line-height-base);
+}
+
+:root .ui-select-dropdown .el-select-dropdown__item.is-hovering {
+  background: var(--ui-interactive-hover);
+  color: var(--ui-text-label-primary);
+}
+
+:root .ui-select-dropdown .el-select-dropdown__item.is-selected {
+  color: var(--ui-primary-text);
+  font-weight: var(--ui-font-weight-medium);
+}
+
+:root .ui-select-dropdown .el-select-dropdown__item.is-disabled {
+  color: var(--ui-text-dimmed);
+}

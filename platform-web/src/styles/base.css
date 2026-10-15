@@ -1,0 +1,258 @@
+/**
+ * 全局基础样式：重置 + 玻璃工具类 + 胶囊默认 + 标题工具类
+ * 具体视觉全部来自 tokens.css（本文件不写死任何颜色）
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+/* 画布兜底色：视频取不到时页面仍是深底，不会白屏 */
+html {
+  background: var(--ui-bg-void);
+}
+
+/**
+ * body / #app 必须透明。
+ * 全站背景视频是 position:fixed; z-index:-1 的**负层级**元素，它绘制在
+ * 元素自身背景之**后**：body 一旦铺了不透明底色，就会把视频整个盖住。
+ * 所以深底只留给 html（画布层），其余层一律透明，背景让给视频。
+ */
+body {
+  margin: 0;
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-font-size-base);
+  line-height: var(--ui-line-height-base);
+  color: var(--ui-text-label-primary);
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  background: transparent;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure {
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--ui-font-size-display);
+  font-weight: var(--ui-font-weight-bold);
+  line-height: var(--ui-line-height-tight);
+}
+
+h2 {
+  font-size: var(--ui-font-size-title);
+  font-weight: var(--ui-font-weight-bold);
+  line-height: var(--ui-line-height-tight);
+}
+
+h3 {
+  font-size: var(--ui-font-size-lg);
+  font-weight: var(--ui-font-weight-medium);
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: var(--ui-text-link);
+  text-decoration: none;
+  transition: color var(--ui-duration-fast) var(--ui-ease-standard);
+}
+
+a:hover {
+  color: var(--ui-text-link-hover);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--ui-font-mono);
+}
+
+/* 等宽工具类：ID / 数值 / 时间戳 / 状态标记 / token 名一律用它 */
+.ui-mono {
+  font-family: var(--ui-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* ==========================================================================
+   玻璃工具类（配方对齐 Apple）
+   --------------------------------------------------------------------------
+   依据：实测自参照页 https://www.apple.com.cn/iphone/ 的 CSS 源与 computed style。
+   参照页的玻璃只有一条配方：saturate(180%) blur(20px) + 单一 rgba 底色，
+   且**没有** border / 内高光 / 外描边 / 投影——本类因此只留「圆角 + 底色 + 模糊」三样。
+   （此前的三层配方来自另一份参考，已整体替换。）
+   .ui-glass 常规面板；.ui-glass--strong 浮层（更不透明 + 加投影做分界）。
+   应用面：仍覆盖卡片/面板/浮层。参照页只把玻璃用在「压在内容之上的条」上，
+   那是因为它没有全页视频背景；我们的可读性依赖玻璃，故不缩减应用面。
+   悬浮 / 阴影的取舍原则（依据用户原话「ui 互动效果显著一点，可以适当增加悬浮，阴影等效果」）：
+   参照页的玻璃是**无阴影**的（computed box-shadow: none），用户这轮明确要加悬浮阴影；
+   调和方式是「只给交互态（hover / 按下）与浮层加阴影，作为底板的玻璃条
+   （侧栏 / 顶栏）保持无阴影」——Apple 自己的 modal 也带阴影，只有压在内容上的玻璃条不带，
+   所以这不构成对参照的背离。令牌：tokens.css 的 --ui-shadow-hover / --ui-shadow-4。
+   ========================================================================== */
+.ui-glass {
+  border-radius: var(--ui-radius-panel);
+  background: var(--ui-glass-bg);
+  -webkit-backdrop-filter: var(--ui-glass-blur);
+  backdrop-filter: var(--ui-glass-blur);
+}
+
+.ui-glass--strong {
+  background: var(--ui-glass-bg-strong);
+  box-shadow: var(--ui-glass-shadow-2);
+}
+
+/* 浏览器不支持 backdrop-filter 时降级成更高不透明度的实色：玻璃感让位，可读性不让 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ui-glass {
+    background: var(--ui-glass-bg-fallback);
+  }
+
+  .ui-glass--strong {
+    background: var(--ui-glass-bg-strong-fallback);
+  }
+}
+
+/* ==========================================================================
+   内容区「向下渐隐的玻璃」（收口层）
+   --------------------------------------------------------------------------
+   依据（用户原话）：「收一点吧」——指让内容区整片有一层向下渐隐的玻璃，
+   把底部的视频收住，别让下半页变成裸露的亮视频。
+   叠放次序：视频（z-index:-1）→ 本层（内容容器的背景）→ 内容本身。
+   四页共用这一个工具类（Layout.vue 的内容容器上挂 .ui-glass-veil），
+   渐变值只来自 --ui-content-veil，不在各页各写一份。
+   ========================================================================== */
+.ui-glass-veil {
+  background-image: var(--ui-content-veil);
+}
+
+/* ==========================================================================
+   胶囊默认值：**只给按钮，不给输入框**
+   --------------------------------------------------------------------------
+   依据 1（用户原话）「我想要毛玻璃，胶囊，半透明的视觉感受」
+     → 按钮 / 导航项 / 标签用胶囊是全站统一要求，做成元素级默认，漏写一处就留方角。
+
+   依据 2（用户报的缺陷）「输入框选中效果呈胶囊形状，与输入框本身的形状不匹配」
+     根因就是上一版把 input / select 也塞进了这条胶囊默认：内层 input 被强制 999px，
+     而它的外框（ui/Input.vue）是 --ui-radius-2（8px），于是出现两处错位：
+       ① 内层胶囊形的底色套在矩形外框里，边界对不上；
+       ② 全局 :focus-visible 焦点环按 999px 画成胶囊，与 8px 的外框环叠成两个形状。
+     实测参照页 https://chat.deepseek.com/ 的行内重命名输入框：外框 236×40、圆角 12px，
+     焦点态是**同形的 1px 内描边**（inset box-shadow），不是胶囊。
+     → 结论：输入框的形状必须与容器一致，不能一律套胶囊。
+   ========================================================================== */
+button {
+  border-radius: var(--ui-radius-pill);
+}
+
+/* 输入框：与容器同形的圆角矩形（ui/Input.vue 的外框即 --ui-radius-2） */
+input,
+select {
+  border-radius: var(--ui-radius-2);
+}
+
+/* 多行文本域不用胶囊（多行时长圆角两侧会切字腔），走面板圆角档 */
+textarea {
+  border-radius: var(--ui-radius-panel);
+}
+
+/* ==========================================================================
+   标题工具类：全大写 + letter-spacing .01em + line-height .98
+   ========================================================================== */
+.ui-heading {
+  font-family: var(--ui-font-display);
+  font-weight: var(--ui-font-weight-bold);
+  text-transform: var(--ui-heading-transform);
+  letter-spacing: var(--ui-heading-tracking);
+  line-height: var(--ui-heading-leading);
+}
+
+/* ==========================================================================
+   平台字标：侧栏 / 登录页 / 介绍页三处共用同一个类，保证计算样式逐项相同
+   字形与 About 的 PLATFORM（.ui-heading）同款：Quantico 居首的字体栈。
+   Quantico 没有中文字形，中文由同一栈内的 CJK 族承接，故只声明一次 font-family。
+   依据（用户原话）：「织流的平台名我希望字体统一使用 about 页面的 plant form
+   （即 PLATFORM）这个单词风格的字样，大小和图标大小比例要合适，视觉要美观」
+   ========================================================================== */
+.ui-wordmark {
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-brand-font-size);
+  font-weight: var(--ui-font-weight-bold);
+  text-transform: var(--ui-heading-transform);
+  letter-spacing: var(--ui-heading-tracking);
+  line-height: var(--ui-heading-leading);
+  white-space: nowrap;
+}
+
+/* 全局焦点可见：键盘可达性底线（按钮 / 链接 / 自定义控件用外环） */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus-ring);
+}
+
+/* 输入类控件改用「边框加粗 + 变色」表达焦点
+   依据（用户原话）：「选中效果可以简单点直接加粗变色输入边框，视觉效果流畅自然优先」。
+   外环（box-shadow）画在输入框上会与它的边框叠成两层形状，观感别扭，故只对输入类去掉。
+   outline-offset:-1px 让它贴在边框内侧：与 1px 边框叠成视觉上的 2px「加粗」，
+   且 outline 不参与布局，不会引起位移。 */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  box-shadow: none;
+  border-color: var(--ui-primary);
+  outline: 1px solid var(--ui-primary);
+  outline-offset: -1px;
+}
+
+/* 通用滚动容器 */
+.ui-scroll {
+  overflow: auto;
+}
+
+/* 屏幕阅读器专用文本 */
+.ui-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,38 @@
+{
+  "name": "platform-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "织流 WEAVEFLOW - 前端视觉层地基（P3）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{js,vue,css}\" \"tests/**/*.js\" \"*.{js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,vue,css}\" \"tests/**/*.js\"",
+    "verify": "npm run lint && npm run format:check && npm test && npm run build"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "axios": "^1.20.0",
+    "element-plus": "^2.14.7",
+    "markdown-it": "^14.1.0",
+    "pinia": "^2.2.6",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.11.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}
