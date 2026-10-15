@@ -87,6 +87,18 @@ export const authApi = {
 export const userApi = {
   /** GET /api/me → 用户对象 */
   getProfile: () => fetchOne(http.get('/me'), 'user'),
+  /**
+   * 更新本人资料（昵称等）→ 200 { user }；后端未实现（FE-B12）时回 404。
+   * @param {{ nickname?: string }} payload
+   */
+  updateProfile: (payload) => fetchOne(http.patch('/me', payload), 'user'),
+  /**
+   * 修改密码 → 204；后端未实现（FE-B12）时回 404。
+   * @param {{ currentPassword: string, newPassword: string }} payload
+   */
+  changePassword: (payload) => http.patch('/me/password', payload),
+  /** 退出全部会话（撤销所有 token）→ 204；后端未实现（FE-B12）时回 404 */
+  logoutAll: () => http.post('/me/logout-all', undefined, { omitContentType: true }),
 }
 
 /* =========================== Provider =========================== */
