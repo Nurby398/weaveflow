@@ -233,7 +233,7 @@ function selectStage(step) {
       </Badge>
       <span class="ui-mono pipeline__run-id">#{{ shortId(runId) }}</span>
       <!-- 主操作紧贴标题，窄窗口下也不会被挤出可视区；次操作用户会找，靠右即可 -->
-      <Button v-if="run" type="primary" size="sm" :loading="advancing" @click="advance"> 确认本阶段产出并流转 </Button>
+      <Button v-if="run" type="primary" size="sm" :loading="advancing" @click="advance"> 审批通过并流转 </Button>
       <div class="pipeline__head-actions">
         <Button type="ghost" size="sm" :loading="loading" @click="load()">刷新</Button>
         <Button type="info" size="sm" @click="router.push('/')">返回工作台</Button>
@@ -256,10 +256,10 @@ function selectStage(step) {
       <!-- ---------------------------- 契约校验结果 ---------------------------- -->
       <section class="contract" :class="{ 'is-passed': contractPassed, 'is-failed': contract && !contractPassed }">
         <header class="contract__head">
-          <span class="contract__title">契约校验</span>
-          <Badge v-if="!contract" tone="neutral">未记录</Badge>
-          <Badge v-else-if="contractPassed" tone="success">通过</Badge>
-          <Badge v-else tone="danger">未通过</Badge>
+          <span class="contract__title">审批门 · 契约校验</span>
+          <Badge v-if="!contract" tone="neutral">待审批</Badge>
+          <Badge v-else-if="contractPassed" tone="success">审批通过</Badge>
+          <Badge v-else tone="danger">打回（校验未通过）</Badge>
           <span v-if="contract?.code" class="ui-mono contract__code">{{ contract.code }}</span>
           <span class="ui-mono contract__scope">流转对象：当前阶段 #{{ (run.currentStage ?? 0) + 1 }}</span>
         </header>
