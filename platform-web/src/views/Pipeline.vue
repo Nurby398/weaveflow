@@ -25,7 +25,9 @@ import { useRoute, useRouter } from 'vue-router'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Empty from '@/components/ui/Empty.vue'
+import Modal from '@/components/ui/Modal.vue'
 import Steps from '@/components/ui/Steps.vue'
+import Textarea from '@/components/ui/Textarea.vue'
 import { logApiError, pipelineApi, toFriendlyError } from '@/api'
 import { useToast } from '@/composables/useToast'
 import { formatIndex, normalizeContractDetails, pickContractFailure, retryHint } from '@/lib/contract'
@@ -45,6 +47,11 @@ const advancing = ref(false)
 /** 最近一次 advance 返回的契约失败（422） */
 const contractFailure = ref(null)
 const selectedStageNo = ref('')
+/** 人工打回（审批门 · FE-B21 未就绪时降级提示） */
+const rejectOpen = ref(false)
+const rejectReason = ref('')
+const rejecting = ref(false)
+const rejectNotice = ref('')
 
 /** 后端阶段状态 → 文案 / Badge 配色（取值见 StageStatus） */
 const STATUS_TEXT = { pending: '待开始', waiting: '等待产出', validated: '已校验', failed: '失败' }
@@ -219,6 +226,36 @@ async function advance() {
   }
 }
 
+/**
+ * 人工打回当前阶段（审批门 · Paperclip 参照 §A2）。
+ * 后端 `POST /api/pipeline/:runId/reject` 未实现（FE-B21）时回 404/501 → 明确降级提示，
+ * 而不是让用户误以为是自己的操作失败。
+ */
+async function doReject() {
+  if (!rejectReason.value.trim()) {
+    rejectNotice.value = '请填写打回理由'
+    return
+  }
+  rejecting.value = true
+  rejectNotice.value = ''
+  try {
+    await pipelineApi.reject(runId.value, { reason: rejectReason.value.trim() })
+    toast.success('已打回当前阶段')
+    rejectOpen.value = false
+    rejectReason.value = ''
+    await load({ silent: true })
+  } catch (error) {
+    if (error?.status === 404 || error?.status === 501) {
+      rejectNotice.value = '人工打回需后端支持（FE-B21 未就绪）；当前仅契约校验会自动打回。'
+    } else {
+      logApiError(error, 'pipeline-reject')
+      toast.error(toFriendlyError(error))
+    }
+  } finally {
+    rejecting.value = false
+  }
+}
+
 function selectStage(step) {
   selectedStageNo.value = String(step?.stageNo ?? '')
 }
@@ -234,6 +271,7 @@ function selectStage(step) {
       <span class="ui-mono pipeline__run-id">#{{ shortId(runId) }}</span>
       <!-- 主操作紧贴标题，窄窗口下也不会被挤出可视区；次操作用户会找，靠右即可 -->
       <Button v-if="run" type="primary" size="sm" :loading="advancing" @click="advance"> 审批通过并流转 </Button>
+      <Button v-if="run" type="ghost" size="sm" :loading="rejecting" @click="rejectOpen = true"> 打回 </Button>
       <div class="pipeline__head-actions">
         <Button type="ghost" size="sm" :loading="loading" @click="load()">刷新</Button>
         <Button type="info" size="sm" @click="router.push('/')">返回工作台</Button>
@@ -327,7 +365,7 @@ function selectStage(step) {
         </template>
 
         <p v-else-if="contractPassed" class="contract__message">本阶段产出符合契约，可以流转到下一阶段。</p>
-        <p v-else class="contract__message">尚无校验结果：点击页头「确认本阶段产出并流转」后显示。</p>
+        <p v-else class="contract__message">尚无校验结果：点击页头「审批通过并流转」后显示。</p>
       </section>
 
       <div class="pipeline__body">
@@ -381,6 +419,22 @@ function selectStage(step) {
         </section>
       </div>
     </template>
+
+    <!-- 人工打回（审批门 · FE-B21 未就绪时接口回 404，降级为明确提示） -->
+    <Modal v-model="rejectOpen" title="打回当前阶段" width="420px">
+      <p class="pipeline__reject-hint">写明打回理由，智能体会据此修正后重新提交。</p>
+      <Textarea
+        v-model="rejectReason"
+        :rows="3"
+        placeholder="如：技术路线不明确，请补充可行性论证"
+        aria-label="打回理由"
+      />
+      <p v-if="rejectNotice" class="pipeline__reject-notice" role="alert">{{ rejectNotice }}</p>
+      <template #footer>
+        <Button type="ghost" @click="rejectOpen = false">取消</Button>
+        <Button type="danger" :loading="rejecting" @click="doReject">确认打回</Button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -655,5 +709,17 @@ function selectStage(step) {
   backdrop-filter: var(--ui-glass-blur);
   border: 1px solid var(--ui-border-l1);
   border-radius: var(--ui-radius-panel);
+}
+
+.pipeline__reject-hint {
+  margin: 0 0 var(--ui-space-3);
+  color: var(--ui-text-label-secondary);
+  line-height: var(--ui-line-height-loose);
+}
+
+.pipeline__reject-notice {
+  margin: var(--ui-space-2) 0 0;
+  color: var(--ui-text-label-secondary);
+  font-size: var(--ui-font-size-sm);
 }
 </style>

@@ -17,11 +17,26 @@ vi.mock('@/lib/evalsMode', () => ({
     return flag.value
   },
 }))
+vi.mock('@/lib/evalsDemo', () => ({
+  DEMO_EVAL_CASES: [{ caseId: 'case-1', name: '选题可行性判断', input: '帮我评估这个选题。', expectedKeyPoints: [] }],
+  DEMO_EVAL_RUNS: [
+    {
+      runId: 'eval-run-1',
+      caseId: 'case-1',
+      caseName: '选题可行性判断',
+      agentName: '①毕设选题与立项顾问',
+      score: 88,
+      durationMs: 3420,
+      tokensIn: 1800,
+      tokensOut: 620,
+      createdAt: '2026-10-15T09:00:00Z',
+    },
+  ],
+}))
 
 async function mountEvals() {
   const wrapper = mount(Evals, { global: { plugins: [ElementPlus] } })
   await flushPromises()
-  await new Promise((resolve) => setTimeout(resolve, 20))
   return wrapper
 }
 

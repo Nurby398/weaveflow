@@ -24,12 +24,41 @@ vi.mock('@/lib/costMode', () => ({
     return flag.value
   },
 }))
+// 直接 mock demo 模块：动态 import 秒回，不依赖真实 chunk 加载的宏任务时序
+vi.mock('@/lib/costDemo', () => ({
+  DEMO_COST_SUMMARY: {
+    currency: 'CNY',
+    totalCost: 42.35,
+    totalTokensIn: 1_284_000,
+    totalTokensOut: 386_500,
+    budget: 100,
+    budgetUsedRatio: 0.42,
+    byTeam: [
+      {
+        teamId: 'team-1',
+        teamName: '毕业设计流水线（我的）',
+        isPlatform: false,
+        cost: 18.2,
+        tokensIn: 552_000,
+        tokensOut: 168_000,
+        runs: 3,
+      },
+      {
+        teamId: 'team-2',
+        teamName: '毕业设计流水线(真实)',
+        isPlatform: true,
+        cost: 24.15,
+        tokensIn: 732_000,
+        tokensOut: 218_500,
+        runs: 5,
+      },
+    ],
+  },
+}))
 
 async function mountCost() {
   const wrapper = mount(Cost, { global: { plugins: [ElementPlus] } })
   await flushPromises()
-  // 动态 import('@/lib/costDemo') 的 chunk 加载需要真实宏任务，flushPromises 盖不住
-  await new Promise((resolve) => setTimeout(resolve, 20))
   return wrapper
 }
 

@@ -172,6 +172,11 @@ export const pipelineApi = {
    * Fastify 会把它当成「空的 JSON body」直接回 400，调用方永远看不到契约详情。
    */
   advance: (runId) => http.post(`/pipeline/${runId}/advance`, undefined, { omitContentType: true }).then(unwrap),
+  /**
+   * 人工打回当前阶段 → 200 { stage }；后端未实现（FE-B21）时回 404。
+   * @param {{ reason: string }} payload
+   */
+  reject: (runId, payload) => http.post(`/pipeline/${runId}/reject`, payload).then(unwrap),
 }
 
 /* ============================== 意见反馈 ============================== */
