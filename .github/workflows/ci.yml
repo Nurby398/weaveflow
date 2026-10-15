@@ -44,3 +44,15 @@ jobs:
       # 覆盖率是「棘轮」：低于 vite.config.js 里的门槛即失败（只许涨不许跌）
       - name: 覆盖率门槛
         run: npm run test:coverage
+
+      # 安全门禁：生产依赖必须零高危（这些会进产物，属于交付面）
+      # 显式指定官方 registry：本机/镜像源（npmmirror）不实现 audit 端点
+      - name: 生产依赖漏洞（阻塞）
+        run: npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org
+
+      # 开发工具链漏洞：只做可见性，不阻塞交付
+      # 现状（2026-10-15）：vitest 2.x / vite 5.x 链路有 8 条（含 1 critical），
+      # 修复需要 vitest 4 / vite 6+ 的破坏性升级 → 单独排期，见路线图 Wave 2。
+      - name: 全量依赖漏洞（仅报告，不阻塞）
+        continue-on-error: true
+        run: npm audit --audit-level=high --registry=https://registry.npmjs.org
