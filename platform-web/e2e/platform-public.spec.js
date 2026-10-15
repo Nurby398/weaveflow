@@ -10,14 +10,14 @@
  * 所以 CI 里不需要真后端也能跑。
  */
 import { expect, test } from '@playwright/test'
-import { login } from './helpers.js'
+import { gotoApp, login } from './helpers.js'
 
 const PLATFORM_AGENT = '需求分析与开题工程师' // mock 里 isPlatform: true
 const PRIVATE_AGENT = '代码开发与测试工程师' // mock 里未标平台 → 私有
 
 test('登录后工作台能看到平台公共智能体，且只有它带「平台」徽标', async ({ page }) => {
   await login(page)
-  await page.goto('/')
+  await gotoApp(page, '/')
 
   const platformCard = page.locator('.agent-card', { hasText: PLATFORM_AGENT })
   const privateCard = page.locator('.agent-card', { hasText: PRIVATE_AGENT })
@@ -30,7 +30,7 @@ test('登录后工作台能看到平台公共智能体，且只有它带「平�
 
 test('智能体页：平台智能体只读（无保存/删除、表单 inert），私有智能体照旧可写', async ({ page }) => {
   await login(page)
-  await page.goto('/agents')
+  await gotoApp(page, '/agents')
 
   await page.locator('.agents__item', { hasText: PLATFORM_AGENT }).click()
   await expect(page.getByText('平台公共 · 只读')).toBeVisible()
@@ -48,7 +48,7 @@ test('智能体页：平台智能体只读（无保存/删除、表单 inert）�
 
 test('工作台点平台智能体 → 进对话 → 发送消息 → 收到流式回复', async ({ page }) => {
   await login(page)
-  await page.goto('/')
+  await gotoApp(page, '/')
 
   await page.locator('.agent-card', { hasText: PLATFORM_AGENT }).click()
   await expect(page).toHaveURL(/\/chat\//)

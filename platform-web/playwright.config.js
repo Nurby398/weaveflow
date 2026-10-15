@@ -25,6 +25,9 @@ export default defineConfig({
   reporter: ci ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL: `http://127.0.0.1:${APP_PORT}`,
+    // 页面里有 6MB 背景视频与外网字体：导航/动作超时显式化，别让默认值把 CI 拖红
+    navigationTimeout: 20_000,
+    actionTimeout: 10_000,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
