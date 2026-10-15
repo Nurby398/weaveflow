@@ -68,6 +68,10 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # 下面「失败摘要 → 提交状态」这一步需要写状态权限
+    permissions:
+      contents: read
+      statuses: write
 
     steps:
       - uses: actions/checkout@v4
@@ -85,7 +89,23 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E（平台公共资源主路径）
-        run: npm run test:e2e
+        run: |
+          set -o pipefail
+          npm run test:e2e 2>&1 | tee e2e-output.txt
+
+      # Actions 的日志下载接口需要 admin 权限（public 仓也 403），而提交状态是公开可读的。
+      # 把失败摘要塞进 status.description（140 字符上限），外部就能直接定位失败原因。
+      - name: 失败摘要 → 提交状态（公开可读）
+        if: failure()
+        run: |
+          DETAIL=$(grep -aE "Error:|Expected|Received|expect\(|✘|failed" e2e-output.txt | head -4 | tr '\n' '|' | tr -s ' ' | cut -c1-138)
+          if [ -z "$DETAIL" ]; then DETAIL=$(tail -c 300 e2e-output.txt | tr '\n' '|' | tr -s ' ' | cut -c1-138); fi
+          BODY=$(node -e 'console.log(JSON.stringify({ state: "failure", context: "e2e-detail", description: process.argv[1] }))' "$DETAIL")
+          curl -sS -X POST -H "Authorization: Bearer ${{ github.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -d "$BODY" > /dev/null
+          echo "已写入提交状态：$DETAIL"
 
       - name: 失败时上传报告
         if: failure()

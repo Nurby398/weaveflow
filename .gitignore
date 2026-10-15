@@ -4,6 +4,7 @@ dist/
 .vite/
 coverage/
 coverage-summary.txt
+e2e-output.txt
 playwright-report/
 test-results/
 blob-report/
