@@ -42,6 +42,7 @@ import Avatar from '@/components/ui/Avatar.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Drawer from '@/components/ui/Drawer.vue'
+import Input from '@/components/ui/Input.vue'
 import Empty from '@/components/ui/Empty.vue'
 import Icon from '@/components/ui/Icon.vue'
 import Modal from '@/components/ui/Modal.vue'
@@ -69,6 +70,7 @@ import {
   statusTone,
 } from '@/lib/dispatch'
 import { formatBytes, formatDateTime, formatNumber, shortId } from '@/lib/format'
+import { groupConversations } from '@/lib/conversationGroups'
 import { renderMarkdown, renderStreamingMarkdown } from '@/lib/markdown'
 
 const route = useRoute()
@@ -1147,33 +1149,14 @@ function timeOf(item) {
   return Number.isNaN(time) ? 0 : time
 }
 
-/** 分组键 = YYYY-MM；日期缺失或非法时回空串（归到一个兜底组，不用它去猜时间） */
-function monthKey(value) {
-  const time = timeOf({ createdAt: value })
-  if (!time) return ''
-  const date = new Date(time)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-}
+/** 会话侧栏搜索关键词（P0-3，本地过滤） */
+const conversationQuery = ref('')
 
 /**
- * 会话按 created 归到 YYYY-MM：组内按时间倒序，组间按月份倒序（空串兜底组排最后）。
- * 组标题的文案格式（此处直接显示 YYYY-MM）待用户确认，见回报的「待确认」清单。
+ * 会话按「今天 / 近 7 天 / 更早」分桶 + 标题关键词过滤：
+ * 纯逻辑抽到 lib/conversationGroups.js（可单测），这里只做数据绑定。
  */
-const conversationGroups = computed(() => {
-  const buckets = new Map()
-  for (const item of conversations.value) {
-    const key = monthKey(item.createdAt)
-    if (!buckets.has(key)) buckets.set(key, [])
-    buckets.get(key).push(item)
-  }
-  return [...buckets.entries()]
-    .map(([key, items]) => ({
-      key,
-      label: key || '未知时间',
-      items: [...items].sort((a, b) => timeOf(b) - timeOf(a)),
-    }))
-    .sort((a, b) => (a.key === b.key ? 0 : a.key < b.key ? 1 : -1))
-})
+const conversationGroups = computed(() => groupConversations(conversations.value, conversationQuery.value))
 
 /* ---------------------- 会话行：⋯ 菜单 ---------------------- */
 
@@ -1400,6 +1383,10 @@ onBeforeUnmount(() => {
         <Badge tone="neutral">{{ conversations.length }}</Badge>
       </div>
 
+      <div class="chat__rail-search">
+        <Input v-model="conversationQuery" aria-label="搜索会话" placeholder="搜索会话" />
+      </div>
+
       <ul class="chat__rail-list ui-scroll">
         <template v-for="group in conversationGroups" :key="group.key">
           <li class="chat__rail-group">{{ group.label }}</li>
@@ -1452,6 +1439,7 @@ onBeforeUnmount(() => {
         <li v-if="!conversations.length" class="chat__rail-empty">
           {{ userStore.loggedIn ? '还没有会话，点上方「新建对话」开始' : '登录后加载会话' }}
         </li>
+        <li v-else-if="!conversationGroups.length" class="chat__rail-empty">没有匹配的会话</li>
       </ul>
     </aside>
 
@@ -1847,6 +1835,10 @@ onBeforeUnmount(() => {
 .chat__rail-label {
   font-size: var(--ui-font-size-caption);
   color: var(--ui-text-caption);
+}
+
+.chat__rail-search {
+  padding: 0 var(--ui-space-4) var(--ui-space-2);
 }
 
 .chat__rail-list {
