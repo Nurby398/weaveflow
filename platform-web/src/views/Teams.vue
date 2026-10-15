@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button.vue'
 import Empty from '@/components/ui/Empty.vue'
 import Input from '@/components/ui/Input.vue'
 import Modal from '@/components/ui/Modal.vue'
+import TeamTemplateWizard from '@/components/TeamTemplateWizard.vue'
 import { agentApi, logApiError, pipelineApi, teamApi, toFriendlyError } from '@/api'
 import { useAuthGuard } from '@/composables/useAuthGuard'
 import { useToast } from '@/composables/useToast'
@@ -29,6 +30,7 @@ const selectedTeamId = ref('')
 const saving = ref(false)
 const confirmDelete = ref(false)
 const starting = ref(false)
+const templateOpen = ref(false)
 
 const form = reactive({ name: '', description: '' })
 
@@ -204,6 +206,7 @@ async function onDrop() {
         <h3>团队</h3>
         <Badge tone="neutral">{{ teams.length }}</Badge>
         <Button type="info" size="sm" @click="createTeam">新建</Button>
+        <Button type="ghost" size="sm" @click="templateOpen = true">使用模板</Button>
       </div>
 
       <ul v-if="teams.length" class="teams__items ui-scroll">
@@ -335,6 +338,9 @@ async function onDrop() {
         <Button type="danger" @click="removeTeam">确认删除</Button>
       </template>
     </Modal>
+
+    <!-- 团队模板：一键搭好「毕设流水线」骨架（Paperclip 参照 §C2） -->
+    <TeamTemplateWizard v-model="templateOpen" @created="load()" />
   </div>
 </template>
 
