@@ -383,9 +383,16 @@ function selectStage(step) {
                 type="button"
                 @click="selectStage({ stageNo: stageKeyOf(stage, index) })"
               >
-                <span class="ui-mono stage__no">{{ String(index + 1).padStart(2, '0') }}</span>
-                <span class="stage__name">{{ agentNameOf(stage, index) }}</span>
-                <Badge :tone="toneOf(stage)">{{ statusTextOf(stage) }}</Badge>
+                <span class="stage__top">
+                  <span class="ui-mono stage__no">{{ String(index + 1).padStart(2, '0') }}</span>
+                  <span class="stage__name">{{ agentNameOf(stage, index) }}</span>
+                </span>
+                <span class="stage__meta">
+                  <Badge :tone="toneOf(stage)">{{ statusTextOf(stage) }}</Badge>
+                  <Badge v-if="contractOf(stage)?.ok === true" tone="success">已过门</Badge>
+                  <Badge v-else-if="contractOf(stage)?.ok === false" tone="danger">打回</Badge>
+                  <Badge v-else tone="neutral">待校验</Badge>
+                </span>
               </button>
             </li>
           </ul>
@@ -624,7 +631,8 @@ function selectStage(step) {
 .stage {
   width: 100%;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--ui-space-2);
   padding: var(--ui-space-2);
   background: transparent;
@@ -636,6 +644,18 @@ function selectStage(step) {
     background var(--ui-duration-fast) var(--ui-ease-standard),
     box-shadow var(--ui-duration-fast) var(--ui-ease-standard),
     transform var(--ui-duration-fast) var(--ui-ease-standard);
+}
+
+.stage__top {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.stage__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
 }
 
 .stage:hover {
