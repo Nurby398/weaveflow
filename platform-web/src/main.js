@@ -49,8 +49,10 @@ import App from './App.vue'
 import router from './router'
 import { setUnauthorizedHandler } from './api/request'
 import { restoreTheme } from './composables/useTheme'
+import { installGlobalErrorHandlers } from './lib/telemetry'
 import { safeRedirect } from './utils/redirect'
 import { useUserStore } from './store/user'
+import './styles/fonts.css'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/markdown.css'
@@ -61,6 +63,9 @@ restoreTheme()
 
 const app = createApp(App)
 const pinia = createPinia()
+
+// 全局错误兜底（W2-1）：errorHandler 抓事件/异步异常；渲染异常由 ErrorBoundary 组件就地兜住
+installGlobalErrorHandlers(app)
 
 app.use(pinia)
 app.use(router)

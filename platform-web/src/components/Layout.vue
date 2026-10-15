@@ -32,6 +32,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Icon from './ui/Icon.vue'
+import ErrorBoundary from './ui/ErrorBoundary.vue'
 import Navbar from './Navbar.vue'
 
 const route = useRoute()
@@ -123,7 +124,10 @@ function isCurrent(to) {
     <div class="layout__main">
       <Navbar :collapsed="collapsed" @toggle-sidebar="collapsed = !collapsed" />
       <main class="layout__content ui-glass-veil" :class="{ 'is-plain': plainContent }">
-        <RouterView />
+        <!-- 内层兜底：页面崩了也只换内容区，侧栏/导航仍可用（外层 App 还有一层） -->
+        <ErrorBoundary title="这个页面加载失败了">
+          <RouterView />
+        </ErrorBoundary>
       </main>
     </div>
   </div>

@@ -5,12 +5,16 @@
  */
 import AppBackground from '@/components/AppBackground.vue'
 import LoginPopup from '@/components/LoginPopup.vue'
+import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import Toast from '@/components/ui/Toast.vue'
 </script>
 
 <template>
   <AppBackground />
-  <RouterView />
+  <!-- 最外层兜底：路由页面（含未登录的登录页/介绍页）渲染抛错时不至于整页白屏 -->
+  <ErrorBoundary title="页面加载失败了">
+    <RouterView />
+  </ErrorBoundary>
   <LoginPopup />
   <Toast />
 </template>
