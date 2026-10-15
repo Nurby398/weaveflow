@@ -211,6 +211,20 @@ export const costApi = {
   summary: () => fetchOne(http.get('/usage/summary'), 'summary'),
 }
 
+/* ============================== 运行历史 ============================== */
+
+/**
+ * 运行历史（Paperclip 参照 · 运行历史 & 追踪）
+ * ------------------------------------------------------------------
+ * 后端接口 FE-B11 未就绪：`GET /api/pipeline/runs` 现为 404。
+ * 契约：runs[] = { runId, teamId, teamName, isPlatform, status, currentStage, stageCount,
+ *                  startedAt, updatedAt, failure }
+ * 前端在 `VITE_MOCK_RUNS` 开启时走 lib/runsDemo.js；关闭时走真实接口。
+ */
+export const runsApi = {
+  list: () => fetchList(http.get('/pipeline/runs'), 'runs'),
+}
+
 /* ============================== 附件 ============================== */
 
 /**
