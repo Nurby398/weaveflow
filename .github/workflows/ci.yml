@@ -98,7 +98,10 @@ jobs:
       - name: 失败摘要 → 提交状态（公开可读）
         if: failure()
         run: |
-          DETAIL=$(grep -aE "Error:|Expected|Received|expect\(|✘|failed" e2e-output.txt | head -4 | tr '\n' '|' | tr -s ' ' | cut -c1-138)
+          # 先抓断言细节（Error/Expected/Received），没有再退回失败用例清单 ——
+          # description 只有 140 字符，优先放"为什么失败"比放"哪个用例失败"更有用
+          DETAIL=$(grep -aE "^ *Error:|Expected |Received |expect\(" e2e-output.txt | head -3 | tr '\n' '|' | tr -s ' ' | cut -c1-138)
+          if [ -z "$DETAIL" ]; then DETAIL=$(grep -aE "✘|failed|Error" e2e-output.txt | head -3 | tr '\n' '|' | tr -s ' ' | cut -c1-138); fi
           if [ -z "$DETAIL" ]; then DETAIL=$(tail -c 300 e2e-output.txt | tr '\n' '|' | tr -s ' ' | cut -c1-138); fi
           BODY=$(node -e 'console.log(JSON.stringify({ state: "failure", context: "e2e-detail", description: process.argv[1] }))' "$DETAIL")
           curl -sS -X POST -H "Authorization: Bearer ${{ github.token }}" \

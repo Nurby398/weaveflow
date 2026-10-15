@@ -555,23 +555,42 @@ const server = createServer(async (req, res) => {
   if (path === '/api/conversations' && method === 'POST')
     return json(res, { conversation: { ...conversations[0], id: uuid(43), title: '新会话' } }, 201)
   // 会话消息与 SSE 流：聊天主路径的 E2E 需要它们（无需真后端）
-  if (/^\/api\/conversations\/[^/]+\/messages$/.test(path) && method === 'GET') {
-    return json(res, {
-      messages: [
-        { id: uuid(51), role: 'user', content: '这是历史提问', createdAt: ago(6), tokensIn: 0, tokensOut: 0 },
-        { id: uuid(52), role: 'assistant', content: '这是历史回答', createdAt: ago(5), tokensIn: 12, tokensOut: 34 },
-      ],
-    })
+  // ⚠️ 流式回复必须**落库到 messages**（真后端也是这么做的）：否则前端在流结束后重拉消息时，
+  //    会把刚渲染的流式气泡换回"服务端实际没有这条"的状态，E2E 就会时绿时红（CI 上实测踩过）。
+  const messagesMatch = path.match(/^\/api\/conversations\/([^/]+)\/messages$/)
+  if (messagesMatch && method === 'GET') {
+    return json(res, { messages: messages[messagesMatch[1]] || [] })
   }
-  if (/^\/api\/conversations\/[^/]+\/stream$/.test(path) && method === 'POST') {
+  const streamMatch = path.match(/^\/api\/conversations\/([^/]+)\/stream$/)
+  if (streamMatch && method === 'POST') {
+    const id = streamMatch[1]
+    const body = (await readJson(req)) || {}
     // E2E 走纯文本短回复：内容少、无围栏，断言稳定
-    return streamReply(res, 20, ['已收到你的问题。', 'E2E 假回复：流式结束。'])
+    const reply = ['已收到你的问题。', 'E2E 假回复：流式结束。']
+    const now = new Date().toISOString()
+    messages[id] = [
+      ...(messages[id] || []),
+      {
+        id: uuid(61),
+        role: 'user',
+        content: String(body.content ?? ''),
+        attachments: [],
+        tokensIn: 0,
+        tokensOut: 0,
+        createdAt: now,
+      },
+      {
+        id: uuid(62),
+        role: 'assistant',
+        content: reply.join(''),
+        attachments: [],
+        tokensIn: 12,
+        tokensOut: 8,
+        createdAt: now,
+      },
+    ]
+    return streamReply(res, 20, reply)
   }
-  if (/^\/api\/conversations\/[^/]+\/messages$/.test(path)) {
-    const id = path.split('/')[3]
-    return json(res, { messages: messages[id] || [] })
-  }
-  if (/^\/api\/conversations\/[^/]+\/stream$/.test(path) && method === 'POST') return streamReply(res)
   /* ------------------------------ 流水线 ------------------------------ */
   const pipelineStart = path.match(/^\/api\/pipeline\/([^/]+)\/start$/)
   if (pipelineStart && method === 'POST') {

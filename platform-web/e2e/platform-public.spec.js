@@ -57,11 +57,16 @@ test('工作台点平台智能体 → 进对话 → 发送消息 → 收到流�
   const composer = page.getByLabel('消息输入')
   await composer.click()
   await composer.pressSequentially('帮我整理开题报告', { delay: 10 })
-  await expect(page.getByRole('button', { name: '发送' })).toBeEnabled()
+  const send = page.getByRole('button', { name: '发送' })
+  await expect(send).toBeEnabled()
   await composer.press('Enter')
 
-  // 假上游 20ms/片段推流；E2E 专用短回复（见 mock-api.mjs 的 stream 路由）
-  const reply = page.locator('.msg--assistant', { hasText: '已收到你的问题' })
+  // 假后端已把流式回复落库（见 mock-api.mjs），所以直接断言内容即可，重拉也不会丢。
+  // ⚠️ 用 .last()：假后端的新会话 id 固定，重复跑时历史会累积，一次可能匹配到多条助手气泡
+  //    （严格模式会直接报错，--repeat-each 复跑时踩过）。
+  const reply = page.locator('.msg--assistant').last()
   await expect(reply).toContainText('已收到你的问题', { timeout: 15_000 })
   await expect(reply).toContainText('E2E 假回复：流式结束', { timeout: 15_000 })
+  // 用户自己发的那条也要在
+  await expect(page.locator('.msg--user').last()).toContainText('帮我整理开题报告')
 })
