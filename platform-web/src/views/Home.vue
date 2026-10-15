@@ -9,6 +9,8 @@ import Avatar from '@/components/ui/Avatar.vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Empty from '@/components/ui/Empty.vue'
+import Input from '@/components/ui/Input.vue'
+import Tabs from '@/components/ui/Tabs.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
 import { agentApi, conversationApi, logApiError, pipelineApi, teamApi, toFriendlyError } from '@/api'
 import { useAuthGuard } from '@/composables/useAuthGuard'
@@ -55,6 +57,39 @@ const groups = computed(() => {
     })
   }
   return list
+})
+
+/** 平台/我的筛选 + 名称搜索（P0-5）：未分组只属于「我的」，平台段排除它 */
+const seg = ref('all')
+const query = ref('')
+const SEG_TABS = [
+  { key: 'all', label: '全部' },
+  { key: 'mine', label: '我的' },
+  { key: 'platform', label: '平台' },
+]
+const filteredGroups = computed(() => {
+  const kw = query.value.trim().toLowerCase()
+  return groups.value.filter((group) => {
+    // 分段：未分组只属于「我的」；其余按 isPlatform 分
+    if (group.id === '__loose__') {
+      if (seg.value === 'platform') return false
+    } else {
+      if (seg.value === 'platform' && !group.isPlatform) return false
+      if (seg.value === 'mine' && group.isPlatform) return false
+    }
+    if (kw) {
+      const nameHit = String(group.name ?? '')
+        .toLowerCase()
+        .includes(kw)
+      const agentHit = group.agents.some((agent) =>
+        String(agent.name ?? '')
+          .toLowerCase()
+          .includes(kw),
+      )
+      if (!nameHit && !agentHit) return false
+    }
+    return true
+  })
 })
 
 const stageCount = computed(() => new Set(agents.value.map((a) => a.stageNo).filter((n) => n !== null)).size)
@@ -186,6 +221,11 @@ function goto(path) {
 
     <!-- ----------------------------- 数据区 ----------------------------- -->
     <template v-else>
+      <div class="workbench__filter">
+        <Tabs v-model="seg" :tabs="SEG_TABS" />
+        <Input v-model="query" aria-label="搜索项目" placeholder="搜索项目或成员" />
+      </div>
+
       <Empty
         v-if="!groups.length"
         icon="box"
@@ -196,7 +236,14 @@ function goto(path) {
         <Button type="info" @click="goto('/agents')">新建智能体</Button>
       </Empty>
 
-      <section v-for="group in groups" :key="group.id" class="team-block">
+      <Empty
+        v-else-if="!filteredGroups.length"
+        icon="filter"
+        title="没有匹配的项目"
+        description="换个关键词，或切到「全部」。"
+      />
+
+      <section v-for="group in filteredGroups" :key="group.id" class="team-block">
         <div class="team-block__head">
           <h3 class="team-block__name">{{ group.name }}</h3>
           <Badge v-if="group.isPlatform" tone="primary">平台公共</Badge>
@@ -302,6 +349,17 @@ function goto(path) {
 .workbench__actions {
   display: flex;
   gap: var(--ui-space-2);
+}
+
+.workbench__filter {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  margin-bottom: var(--ui-space-4);
+}
+
+.workbench__filter .ui-input {
+  max-width: 240px;
 }
 
 .workbench__skeleton {

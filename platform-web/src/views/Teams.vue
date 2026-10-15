@@ -10,6 +10,7 @@ import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Empty from '@/components/ui/Empty.vue'
 import Input from '@/components/ui/Input.vue'
+import Tabs from '@/components/ui/Tabs.vue'
 import Modal from '@/components/ui/Modal.vue'
 import TeamTemplateWizard from '@/components/TeamTemplateWizard.vue'
 import { agentApi, logApiError, pipelineApi, teamApi, toFriendlyError } from '@/api'
@@ -27,6 +28,30 @@ const { requireLogin } = useAuthGuard()
 const teams = ref([])
 const allAgents = ref([])
 const selectedTeamId = ref('')
+
+/** 平台/我的筛选 + 名称搜索（P0-5） */
+const seg = ref('all')
+const query = ref('')
+const SEG_TABS = [
+  { key: 'all', label: '全部' },
+  { key: 'mine', label: '我的' },
+  { key: 'platform', label: '平台' },
+]
+const filteredTeams = computed(() => {
+  const kw = query.value.trim().toLowerCase()
+  return teams.value.filter((team) => {
+    if (seg.value === 'platform' && !team.isPlatform) return false
+    if (seg.value === 'mine' && team.isPlatform) return false
+    if (
+      kw &&
+      !String(team.name ?? '')
+        .toLowerCase()
+        .includes(kw)
+    )
+      return false
+    return true
+  })
+})
 const saving = ref(false)
 const confirmDelete = ref(false)
 const starting = ref(false)
@@ -209,8 +234,13 @@ async function onDrop() {
         <Button type="ghost" size="sm" @click="templateOpen = true">使用模板</Button>
       </div>
 
-      <ul v-if="teams.length" class="teams__items ui-scroll">
-        <li v-for="team in teams" :key="team.id">
+      <div class="teams__filter">
+        <Tabs v-model="seg" :tabs="SEG_TABS" />
+        <Input v-model="query" aria-label="搜索团队" placeholder="搜索名称" />
+      </div>
+
+      <ul v-if="filteredTeams.length" class="teams__items ui-scroll">
+        <li v-for="team in filteredTeams" :key="team.id">
           <button
             class="teams__item"
             :class="{ 'is-active': team.id === selectedTeamId }"
@@ -225,6 +255,14 @@ async function onDrop() {
           </button>
         </li>
       </ul>
+
+      <Empty
+        v-else-if="teams.length && !filteredTeams.length"
+        size="sm"
+        icon="filter"
+        title="没有匹配的团队"
+        description="换个关键词，或切到「全部」。"
+      />
 
       <Empty v-else-if="userStore.loggedIn" size="sm" icon="teams" title="还没有团队" />
       <Empty v-else size="sm" icon="profile" title="登录后查看" />
@@ -367,6 +405,14 @@ async function onDrop() {
 .teams__list-head {
   display: flex;
   align-items: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border-l1);
+}
+
+.teams__filter {
+  display: flex;
+  flex-direction: column;
   gap: var(--ui-space-2);
   padding: var(--ui-space-3);
   border-bottom: 1px solid var(--ui-border-l1);

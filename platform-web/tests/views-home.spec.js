@@ -131,4 +131,31 @@ describe('views/Home —— 工作台现状（重构前的行为基线）', () =
     expect(platformStat).toBeTruthy()
     expect(platformStat.text()).toContain('1')
   })
+
+  it('P0-5 筛选：平台段只显示平台项目，搜索按名称过滤', async () => {
+    const wrapper = await mountHome()
+    expect(wrapper.findAll('.team-block').length).toBe(2)
+
+    // 切到「平台」：未分组（我的）被排除
+    await wrapper
+      .findAll('.el-tabs__item')
+      .find((t) => t.text().includes('平台'))
+      .trigger('click')
+    expect(wrapper.findAll('.team-block').length).toBe(1)
+    expect(wrapper.findAll('.team-block')[0].text()).toContain('毕业设计流水线')
+
+    // 回到「全部」，搜索命中成员名 → 未分组（含"我的私有智能体"）保留
+    await wrapper
+      .findAll('.el-tabs__item')
+      .find((t) => t.text().includes('全部'))
+      .trigger('click')
+    await wrapper.find('input[aria-label="搜索项目"]').setValue('私有')
+    expect(wrapper.findAll('.team-block').length).toBe(1)
+    expect(wrapper.findAll('.team-block')[0].text()).toContain('未分组')
+
+    // 搜不存在的词 → 空态
+    await wrapper.find('input[aria-label="搜索项目"]').setValue('zzz')
+    await flushPromises()
+    expect(wrapper.text()).toContain('没有匹配的项目')
+  })
 })

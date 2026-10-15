@@ -26,6 +26,30 @@ const userStore = useUserStore()
 const { requireLogin } = useAuthGuard()
 
 const agents = ref([])
+
+/** 平台/我的筛选 + 名称搜索（P0-5） */
+const seg = ref('all')
+const query = ref('')
+const SEG_TABS = [
+  { key: 'all', label: '全部' },
+  { key: 'mine', label: '我的' },
+  { key: 'platform', label: '平台' },
+]
+const filteredAgents = computed(() => {
+  const kw = query.value.trim().toLowerCase()
+  return agents.value.filter((agent) => {
+    if (seg.value === 'platform' && !agent.isPlatform) return false
+    if (seg.value === 'mine' && agent.isPlatform) return false
+    if (
+      kw &&
+      !String(agent.name ?? '')
+        .toLowerCase()
+        .includes(kw)
+    )
+      return false
+    return true
+  })
+})
 const providers = ref([])
 const docs = ref([])
 const selectedId = ref('')
@@ -327,8 +351,13 @@ async function unbindExternal() {
         <Button type="info" size="sm" @click="createNew">新建</Button>
       </div>
 
-      <ul v-if="agents.length" class="agents__items ui-scroll">
-        <li v-for="agent in agents" :key="agent.id">
+      <div class="agents__filter">
+        <Tabs v-model="seg" :tabs="SEG_TABS" />
+        <Input v-model="query" aria-label="搜索智能体" placeholder="搜索名称" />
+      </div>
+
+      <ul v-if="filteredAgents.length" class="agents__items ui-scroll">
+        <li v-for="agent in filteredAgents" :key="agent.id">
           <button
             class="agents__item"
             :class="{ 'is-active': agent.id === selectedId }"
@@ -346,6 +375,14 @@ async function unbindExternal() {
           </button>
         </li>
       </ul>
+
+      <Empty
+        v-else-if="agents.length && !filteredAgents.length"
+        size="sm"
+        icon="filter"
+        title="没有匹配的智能体"
+        description="换个关键词，或切到「全部」。"
+      />
 
       <Empty
         v-else-if="userStore.loggedIn"
@@ -611,6 +648,14 @@ async function unbindExternal() {
   flex: 1;
   font-size: var(--ui-font-size-base);
   color: var(--ui-text-label-primary);
+}
+
+.agents__filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-border-l1);
 }
 
 .agents__items {
