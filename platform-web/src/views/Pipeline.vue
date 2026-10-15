@@ -30,7 +30,13 @@ import Steps from '@/components/ui/Steps.vue'
 import Textarea from '@/components/ui/Textarea.vue'
 import { logApiError, pipelineApi, toFriendlyError } from '@/api'
 import { useToast } from '@/composables/useToast'
-import { formatIndex, normalizeContractDetails, pickContractFailure, retryHint } from '@/lib/contract'
+import {
+  describeValueDrift,
+  formatIndex,
+  normalizeContractDetails,
+  pickContractFailure,
+  retryHint,
+} from '@/lib/contract'
 import { renderMarkdown } from '@/lib/markdown'
 import { shortId } from '@/lib/format'
 
@@ -139,7 +145,11 @@ const hasIssueList = computed(() => {
   const value = contract.value
   if (!value) return false
   return (
-    value.missing.length > 0 || value.extra.length > 0 || value.orderIssues.length > 0 || value.typeIssues.length > 0
+    value.missing.length > 0 ||
+    value.extra.length > 0 ||
+    value.orderIssues.length > 0 ||
+    value.typeIssues.length > 0 ||
+    value.valueDrift.length > 0
   )
 })
 
@@ -355,6 +365,16 @@ function selectStage(step) {
                 <span class="ui-mono contract__field">{{ issue.field || '—' }}</span>
                 <span class="contract__detail">期望 {{ issue.expected || '—' }}</span>
                 <span class="contract__detail">实际 {{ issue.actual || '—' }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div v-if="contract.valueDrift.length" class="contract__group">
+            <span class="contract__group-label">值漂移（{{ contract.valueDrift.length }}）</span>
+            <ul class="contract__list">
+              <li v-for="(drift, index) in contract.valueDrift" :key="index" class="contract__item">
+                <span class="ui-mono contract__field">{{ drift.field }}</span>
+                <span class="contract__detail">{{ describeValueDrift(drift) }}</span>
               </li>
             </ul>
           </div>

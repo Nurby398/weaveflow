@@ -72,9 +72,31 @@ export function normalizeContractDetails(details) {
     extra: toTextList(raw.extra),
     orderIssues: Array.isArray(raw.orderIssues) ? raw.orderIssues.map(normalizeOrderIssue) : [],
     typeIssues: Array.isArray(raw.typeIssues) ? raw.typeIssues.map(normalizeTypeIssue) : [],
+    valueDrift: Array.isArray(raw.valueDrift) ? raw.valueDrift.map(normalizeValueDrift) : [],
     retryAllowed: raw.retryAllowed === true,
     maxRetries: maxRetries !== null && maxRetries > 0 ? maxRetries : 0,
   }
+}
+
+/** 值漂移条目：继承字段被本阶段改错（缺陷 C，后端仅在传 expectedInherited 时返回） */
+function normalizeValueDrift(raw) {
+  return {
+    field: toText(firstOf(raw, ['field', 'key', 'name'])) || '—',
+    expected: raw?.expected,
+    actual: raw?.actual,
+  }
+}
+
+/** 值的人话展示：数组/对象转 JSON，标量直出（与后端 describeValueDrift 同义） */
+function valueText(value) {
+  if (value === undefined || value === null) return String(value)
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+/** 值漂移的人话文案：`字段 应沿用上游 X，实际是 Y` */
+export function describeValueDrift(drift) {
+  return `${drift.field} 应沿用上游 ${valueText(drift.expected)}，实际是 ${valueText(drift.actual)}`
 }
 
 /**
@@ -101,7 +123,8 @@ export function hasContractIssues(details) {
     details.missing.length > 0 ||
     details.extra.length > 0 ||
     details.orderIssues.length > 0 ||
-    details.typeIssues.length > 0
+    details.typeIssues.length > 0 ||
+    details.valueDrift.length > 0
   )
 }
 
