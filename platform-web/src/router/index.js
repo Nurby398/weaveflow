@@ -94,6 +94,13 @@ const routes = [
         meta: { title: '评测' },
       },
       {
+        // 知识库管理页（设计评审 P0-4）：后端接口早已就绪，此前缺前端界面
+        path: 'knowledge',
+        name: 'Knowledge',
+        component: () => import('@/views/Knowledge.vue'),
+        meta: { title: '知识库' },
+      },
+      {
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),

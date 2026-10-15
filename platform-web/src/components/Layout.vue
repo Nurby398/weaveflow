@@ -67,6 +67,7 @@ const navItems = [
   { to: '/runs', label: '运行历史', icon: 'gauge' },
   { to: '/cost', label: '成本', icon: 'coin' },
   { to: '/evals', label: '评测', icon: 'aim' },
+  { to: '/knowledge', label: '知识库', icon: 'knowledge' },
   { to: '/settings', label: '设置', icon: 'settings' },
   { to: '/profile', label: '个人中心', icon: 'profile' },
   // 视觉验收（/__ui）只在开发时出现在导航里；生产构建时这一项不存在。
