@@ -23,10 +23,15 @@ const ci = Boolean(process.env.CI)
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
-  expect: { timeout: 7_000 },
+  /**
+   * CI 首次跑要冷启动 vite（按需编译）+ 浏览器冷启动，7s 的默认断言超时会偶发不够用；
+   * 实测过同一套用例一次红一次绿（2026-10-15），所以显式放宽并给 CI 两次重试：
+   * 抖动不能被当成"绿的"，但重试耗尽仍红才算真失败。
+   */
+  expect: { timeout: 10_000 },
   fullyParallel: false,
   workers: 1,
-  retries: ci ? 1 : 0,
+  retries: ci ? 2 : 0,
   forbidOnly: ci,
   reporter: ci ? [['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
@@ -43,12 +48,15 @@ export default defineConfig({
     {
       command: 'node scripts/mock-api.mjs',
       port: MOCK_PORT,
+      timeout: 30_000,
       reuseExistingServer: !ci,
       env: { MOCK_PORT: String(MOCK_PORT) },
     },
     {
+      // 冷启动（首次按需编译）在 CI 上可能明显慢于本地，给足 120s
       command: `npx vite --host 127.0.0.1 --port ${APP_PORT} --strictPort`,
       port: APP_PORT,
+      timeout: 120_000,
       reuseExistingServer: !ci,
       env: { VITE_DEV_PROXY_TARGET: `http://127.0.0.1:${MOCK_PORT}` },
     },
