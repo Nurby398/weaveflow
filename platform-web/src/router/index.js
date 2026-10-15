@@ -108,6 +108,13 @@ const routes = [
         meta: { title: '知识库' },
       },
       {
+        // 资产库（EvoFlow 参照）：阶段产出沉淀 + 检索，FE-B31
+        path: 'assets',
+        name: 'Assets',
+        component: () => import('@/views/Assets.vue'),
+        meta: { title: '资产库' },
+      },
+      {
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),

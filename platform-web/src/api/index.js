@@ -247,6 +247,20 @@ export const tasksApi = {
   cancel: (id) => http.post(`/tasks/${id}/cancel`).then(unwrap),
 }
 
+/* ============================== 资产库 ============================== */
+
+/**
+ * 资产库（EvoFlow 参照 · 资产中心）
+ * ------------------------------------------------------------------
+ * 后端接口 FE-B31 未就绪：GET /api/assets 现为 404。
+ * 契约：asset = { id, teamId, teamName, stageNo, title, content, createdAt }
+ * 资产由阶段产出自动沉淀（后端落库），前端只做检索与展示。
+ * 前端在 `VITE_MOCK_ASSETS` 开启时走 lib/assetsDemo.js；关闭时走真实接口。
+ */
+export const assetsApi = {
+  list: () => fetchList(http.get('/assets'), 'assets'),
+}
+
 /* ============================== 评测 ============================== */
 
 /**
