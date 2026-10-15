@@ -804,6 +804,37 @@ function abort() {
   }
 }
 
+/* ---------------------- 消息级操作（P0-2） ---------------------- */
+
+/** 复制消息原文（Markdown 源码）。剪贴板不可用时静默降级，不让复制按钮炸掉。 */
+async function copyMessage(message) {
+  const text = String(message.content ?? '')
+  if (!text) return
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    }
+    toast.success('已复制消息')
+  } catch {
+    toast.error('复制失败，请手动选中复制')
+  }
+}
+
+/** 重新生成：重发这条 assistant 之前最近的一条 user 消息（复用 send() 全链路）。 */
+async function regenerate(message) {
+  if (streaming.value) return
+  const index = messages.value.indexOf(message)
+  const prior = [...messages.value.slice(0, index)].reverse().find((item) => item.role === 'user')
+  if (!prior) return
+  input.value = prior.content
+  await send()
+}
+
+/** 删除单条（本地）。服务端删除需后端接口（FE-B，见清单），当前仅本会话内移除。 */
+function removeMessage(message) {
+  messages.value = messages.value.filter((item) => item !== message)
+}
+
 /* ====================== 织流会话 · 意图派发（演示通道） ====================== */
 
 /**
@@ -1611,6 +1642,22 @@ onBeforeUnmount(() => {
                   </template>
                 </p>
               </template>
+
+              <!-- 消息级操作（P0-2）：hover / 键盘聚焦出现；流式中的占位气泡不给 -->
+              <div v-if="!message.streaming && message.content" class="msg__actions">
+                <button type="button" class="msg__action" @click="copyMessage(message)">复制</button>
+                <button
+                  v-if="message.role === 'assistant'"
+                  type="button"
+                  class="msg__action"
+                  @click="regenerate(message)"
+                >
+                  重新生成
+                </button>
+                <button type="button" class="msg__action msg__action--danger" @click="removeMessage(message)">
+                  删除
+                </button>
+              </div>
             </article>
           </div>
         </div>
@@ -2153,6 +2200,36 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: var(--ui-space-2);
   min-width: 0;
+}
+
+/* 消息级操作（P0-2）：hover / 键盘聚焦出现，默认不占位、不打扰阅读 */
+.msg__actions {
+  display: flex;
+  gap: var(--ui-space-2);
+  opacity: 0;
+  transition: opacity var(--ui-duration-fast) var(--ui-ease-standard);
+}
+
+.msg:hover .msg__actions,
+.msg:focus-within .msg__actions {
+  opacity: 1;
+}
+
+.msg__action {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ui-text-caption);
+  font-size: var(--ui-font-size-caption);
+  cursor: pointer;
+}
+
+.msg__action:hover {
+  color: var(--ui-text-label-secondary);
+}
+
+.msg__action--danger:hover {
+  color: var(--ui-danger-label);
 }
 
 /* 用户消息：右对齐浅灰气泡，无边框、无阴影（气泡本身就是容器） */
