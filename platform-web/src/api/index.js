@@ -225,6 +225,22 @@ export const runsApi = {
   list: () => fetchList(http.get('/pipeline/runs'), 'runs'),
 }
 
+/* ============================== 评测 ============================== */
+
+/**
+ * 评测（Paperclip 参照 · Evals）
+ * ------------------------------------------------------------------
+ * 后端接口 FE-B20 未就绪：`GET /api/evals/cases` / `POST /api/evals/run` 现为 404。
+ * 契约：cases[] = { caseId, name, input, expectedKeyPoints[] }
+ *       runs[]  = { runId, caseId, caseName, agentName, score, durationMs, tokensIn, tokensOut, createdAt }
+ * 前端在 `VITE_MOCK_EVALS` 开启时走 lib/evalsDemo.js；关闭时走真实接口。
+ */
+export const evalsApi = {
+  cases: () => fetchList(http.get('/evals/cases'), 'cases'),
+  runs: () => fetchList(http.get('/evals/runs'), 'runs'),
+  run: (payload) => fetchOne(http.post('/evals/run', payload), 'run'),
+}
+
 /* ============================== 附件 ============================== */
 
 /**
