@@ -10,6 +10,7 @@ import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Empty from '@/components/ui/Empty.vue'
 import Input from '@/components/ui/Input.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
 import Tabs from '@/components/ui/Tabs.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
 import { agentApi, conversationApi, logApiError, pipelineApi, teamApi, toFriendlyError } from '@/api'
@@ -215,9 +216,7 @@ function goto(path) {
     </Empty>
 
     <!-- ---------------------------- 加载骨架 ---------------------------- -->
-    <div v-else-if="loading && !agents.length" class="workbench__skeleton">
-      <div v-for="n in 3" :key="n" class="workbench__skeleton-card" />
-    </div>
+    <LoadingState v-else-if="loading && !agents.length" :rows="3" />
 
     <!-- ----------------------------- 数据区 ----------------------------- -->
     <template v-else>

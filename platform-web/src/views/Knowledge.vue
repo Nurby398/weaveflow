@@ -10,6 +10,7 @@ import { computed, onMounted, ref } from 'vue'
 import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Empty from '@/components/ui/Empty.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 import Input from '@/components/ui/Input.vue'
 import Modal from '@/components/ui/Modal.vue'
 import Textarea from '@/components/ui/Textarea.vue'
@@ -120,9 +121,7 @@ function formatBytes(bytes) {
       <Button type="primary" size="sm" @click="openCreate">新建文档</Button>
     </header>
 
-    <Empty v-if="loadError" icon="warning" title="读取知识库失败" :description="loadError">
-      <Button type="info" @click="load()">重试</Button>
-    </Empty>
+    <ErrorState v-if="loadError" title="读取知识库失败" :description="loadError" @retry="load()" />
 
     <Empty
       v-else-if="!loading && !docs.length"
