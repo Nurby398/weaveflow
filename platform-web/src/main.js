@@ -50,6 +50,7 @@ import router from './router'
 import { setUnauthorizedHandler } from './api/request'
 import { restoreTheme } from './composables/useTheme'
 import { installGlobalErrorHandlers } from './lib/telemetry'
+import { installWebVitals } from './lib/webVitals'
 import { safeRedirect } from './utils/redirect'
 import { useUserStore } from './store/user'
 import './styles/fonts.css'
@@ -66,6 +67,9 @@ const pinia = createPinia()
 
 // 全局错误兜底（W2-1）：errorHandler 抓事件/异步异常；渲染异常由 ErrorBoundary 组件就地兜住
 installGlobalErrorHandlers(app)
+
+// Web Vitals 采集（W2-5）：端点 FE-B16 未配置时零网络请求，安装本身安全
+installWebVitals()
 
 app.use(pinia)
 app.use(router)

@@ -7,7 +7,7 @@
  *   3. 缓冲区有上限，长会话不会无限膨胀。
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { installGlobalErrorHandlers, recentErrors, reportError } from '@/lib/telemetry'
+import { installGlobalErrorHandlers, recentErrors, reportError, reportEvent, reportMetric } from '@/lib/telemetry'
 
 afterEach(() => {
   vi.unstubAllEnvs()
@@ -82,5 +82,13 @@ describe('lib/telemetry', () => {
 
     // 走一遍：异常被记录而不是抛出去
     expect(() => app.config.errorHandler(new Error('事件回调里的错'), null, 'click handler')).not.toThrow()
+  })
+
+  it('reportEvent / reportMetric：端点未配置时不发网络请求（W2-5/W2-6）', () => {
+    vi.stubEnv('VITE_TELEMETRY_URL', '')
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(() => Promise.resolve(new Response(null)))
+    expect(() => reportEvent('login', { userId: 'u1' })).not.toThrow()
+    expect(() => reportMetric('LCP', 123)).not.toThrow()
+    expect(spy).not.toHaveBeenCalled()
   })
 })

@@ -6,6 +6,7 @@
 import { defineStore } from 'pinia'
 import { authApi, userApi } from '@/api'
 import { clearAuth, getStoredUser, getToken, isLoggedIn, setRefreshToken, setStoredUser, setToken } from '@/utils/auth'
+import { reportEvent } from '@/lib/telemetry'
 
 export { isLoggedIn }
 
@@ -41,6 +42,8 @@ export const useUserStore = defineStore('user', {
         const { token, refreshToken, userInfo } = pickSession(result)
         if (!token) throw new Error('登录响应中缺少 token')
         this.setSession(token, userInfo, refreshToken)
+        // 埋点（W2-6）：登录漏斗事件；端点未配置时零网络请求
+        reportEvent('login', { userId: userInfo?.id ?? null })
         return result
       } finally {
         this.loading = false

@@ -110,6 +110,46 @@ export function recentErrors() {
   return [...buffer]
 }
 
+/** 通用上报通道（FE-B16 同端点）：端点未配置时静默，sendBeacon 优先，失败绝不抛。 */
+function sendJson(payload) {
+  const url = endpoint()
+  if (!url) return
+  try {
+    const body = JSON.stringify(payload)
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }))
+    } else {
+      fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body }).catch(() => {})
+    }
+  } catch {
+    /* 上报失败不影响主流程 */
+  }
+}
+
+/**
+ * 埋点（W2-6）：关键漏斗事件（注册/登录/建会话/首次消息/启动流水线）。
+ * 与错误上报共用 FE-B16 端点，载荷带 type:'event' 区分。
+ */
+export function reportEvent(name, props = {}) {
+  try {
+    sendJson({ type: 'event', name: String(name), props: props ?? {}, at: new Date().toISOString() })
+  } catch {
+    /* 绝不抛 */
+  }
+}
+
+/**
+ * Web Vitals（W2-5）：上报 LCP/CLS/INP/FCP 等指标。
+ * 与错误上报共用 FE-B16 端点，载荷带 type:'metric' 区分。
+ */
+export function reportMetric(name, value, extra = {}) {
+  try {
+    sendJson({ type: 'metric', name: String(name), value, extra: extra ?? {}, at: new Date().toISOString() })
+  } catch {
+    /* 绝不抛 */
+  }
+}
+
 /** 安装全局兜底：Vue 的 errorHandler + 浏览器侧的 error/unhandledrejection */
 export function installGlobalErrorHandlers(app) {
   app.config.errorHandler = (error, _instance, info) => {
