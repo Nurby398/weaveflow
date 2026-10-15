@@ -6,7 +6,7 @@
  *   · agentAvatar 匹配不上 → 头像静默换成别的智能体（认错人）
  * 所以这里钉的是「边界输入不能崩、不能静默错」。
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { formatBytes, formatDateTime, formatNumber, relativeTime, shortId } from '@/lib/format'
 import { AGENT_AVATARS, BRAND_AVATAR, DEFAULT_ASSISTANT_NAME, agentAvatar } from '@/lib/avatars'
 
