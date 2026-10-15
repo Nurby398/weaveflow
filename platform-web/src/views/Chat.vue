@@ -43,6 +43,7 @@ import Badge from '@/components/ui/Badge.vue'
 import Button from '@/components/ui/Button.vue'
 import Drawer from '@/components/ui/Drawer.vue'
 import Input from '@/components/ui/Input.vue'
+import PlanCard from '@/components/PlanCard.vue'
 import Empty from '@/components/ui/Empty.vue'
 import Icon from '@/components/ui/Icon.vue'
 import Modal from '@/components/ui/Modal.vue'
@@ -917,8 +918,13 @@ async function handleWeaveflowSend(content) {
     summonMember(content, member, content)
     return true
   }
-  if ((await classifyForDispatch(content)) === 'fallback') return false
-  await startDispatchTurn(content)
+  const intent = await classifyForDispatch(content)
+  if (intent === 'fallback') return false
+  // 计划卡（EvoFlow §E1）：先展示可确认计划，用户确认后才真正启动驱动
+  const mod = await loadDispatchDemo()
+  const stages = (mod?.DEMO_STAGES || []).map((stage) => ({ agentName: stage.agentName }))
+  pushUserMessage(content)
+  pendingPlan.value = { content, stages }
   return true
 }
 
@@ -955,6 +961,11 @@ function stopDemo() {
  */
 async function startDispatchTurn(content) {
   pushUserMessage(content)
+  await runDispatch(content)
+}
+
+/** 真正启动演示驱动（不含落用户消息）。计划卡确认后与 @ 召唤等旧路径共用。 */
+async function runDispatch(content) {
   dispatchAgent.value = ''
   dispatchAgentId.value = ''
   const mod = await loadDispatchDemo()
@@ -970,6 +981,22 @@ async function startDispatchTurn(content) {
   Promise.resolve(run).finally(() => {
     demoRunning = false
   })
+}
+
+/* ---------------------- 计划卡（EvoFlow §E1） ---------------------- */
+
+/** 待确认的计划：{ content, stages: [{ agentName }] }；确认前不启动驱动 */
+const pendingPlan = ref(null)
+
+async function confirmPlan() {
+  const plan = pendingPlan.value
+  if (!plan) return
+  pendingPlan.value = null
+  await runDispatch(plan.content)
+}
+
+function cancelPlan() {
+  pendingPlan.value = null
 }
 
 /**
@@ -1663,6 +1690,16 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- ---------------------------- 输入区 ---------------------------- -->
+        <!-- 计划卡（EvoFlow §E1）：派发识别后先展示可确认计划，确认才真正启动 -->
+        <div v-if="pendingPlan" class="chat__plan">
+          <PlanCard
+            :content="pendingPlan.content"
+            :stages="pendingPlan.stages"
+            @confirm="confirmPlan"
+            @cancel="cancelPlan"
+          />
+        </div>
+
         <div class="chat__composer">
           <div class="chat__composer-inner">
             <ul v-if="uploads.length" class="chat__uploads">
@@ -2349,6 +2386,12 @@ onBeforeUnmount(() => {
   background: var(--ui-bg-layer-1);
   -webkit-backdrop-filter: var(--ui-glass-blur);
   backdrop-filter: var(--ui-glass-blur);
+}
+
+.chat__plan {
+  max-width: var(--ui-layout-content-max);
+  margin: 0 auto var(--ui-space-3);
+  padding: 0 var(--ui-space-5);
 }
 
 .chat__composer-inner {
