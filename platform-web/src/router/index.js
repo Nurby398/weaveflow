@@ -80,6 +80,13 @@ const routes = [
         meta: { title: '运行历史' },
       },
       {
+        // 任务中心（EvoFlow 参照）：后台任务状态/进度/暂停恢复取消，FE-B30
+        path: 'tasks',
+        name: 'Tasks',
+        component: () => import('@/views/Tasks.vue'),
+        meta: { title: '任务中心' },
+      },
+      {
         // 成本（Paperclip 参照）：token/费用聚合与预算，占位
         path: 'cost',
         name: 'Cost',

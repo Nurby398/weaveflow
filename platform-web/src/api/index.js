@@ -230,6 +230,23 @@ export const runsApi = {
   list: () => fetchList(http.get('/pipeline/runs'), 'runs'),
 }
 
+/* ============================== 任务中心 ============================== */
+
+/**
+ * 任务中心（EvoFlow 参照 · 后台任务）
+ * ------------------------------------------------------------------
+ * 后端接口 FE-B30 未就绪：GET /api/tasks 现为 404。
+ * 契约：task = { id, title, teamId, teamName, status, progress, currentStage, startedAt, updatedAt }
+ * 操作：POST /api/tasks/:id/{pause,resume,cancel}
+ * 前端在 `VITE_MOCK_TASKS` 开启时走 lib/tasksDemo.js；关闭时走真实接口。
+ */
+export const tasksApi = {
+  list: () => fetchList(http.get('/tasks'), 'tasks'),
+  pause: (id) => http.post(`/tasks/${id}/pause`).then(unwrap),
+  resume: (id) => http.post(`/tasks/${id}/resume`).then(unwrap),
+  cancel: (id) => http.post(`/tasks/${id}/cancel`).then(unwrap),
+}
+
 /* ============================== 评测 ============================== */
 
 /**

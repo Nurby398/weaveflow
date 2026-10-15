@@ -65,6 +65,7 @@ const navItems = [
   { to: '/agents', label: '智能体创建', icon: 'agents' },
   { to: '/teams', label: '智能体团队', icon: 'teams' },
   { to: '/runs', label: '运行历史', icon: 'gauge' },
+  { to: '/tasks', label: '任务中心', icon: 'timer' },
   { to: '/cost', label: '成本', icon: 'coin' },
   { to: '/evals', label: '评测', icon: 'aim' },
   { to: '/knowledge', label: '知识库', icon: 'knowledge' },
