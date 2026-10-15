@@ -88,6 +88,27 @@ export default defineConfig(({ command, mode }) => {
     test: {
       environment: 'node',
       include: ['tests/**/*.spec.js'],
+      coverage: {
+        provider: 'v8',
+        reporter: ['text-summary', 'text'],
+        // 只统计产品代码；入口与构建脚本不计入
+        include: ['src/**/*.{js,vue}'],
+        exclude: ['src/main.js'],
+        /**
+         * 门槛＝当前实测值的「棘轮」：只许涨、不许跌。
+         * 首次引入时的实测（2026-10-15）：All files 11.85% lines（视图层还没铺组件测试，
+         * 所以全局线放得低；抬高的动作跟着组件测试一起做）。
+         * src/lib 与 src/api 已被单测覆盖得较好，单独按更严的底线卡。
+         */
+        thresholds: {
+          lines: 11,
+          statements: 11,
+          functions: 38,
+          branches: 70,
+          'src/lib/**': { lines: 55, branches: 80 },
+          'src/api/**': { lines: 78 },
+        },
+      },
     },
   }
 })

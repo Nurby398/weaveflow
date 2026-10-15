@@ -40,3 +40,7 @@ jobs:
 
       - name: 门禁（lint + format 检查 + 单测 + 构建）
         run: npm run verify
+
+      # 覆盖率是「棘轮」：低于 vite.config.js 里的门槛即失败（只许涨不许跌）
+      - name: 覆盖率门槛
+        run: npm run test:coverage
