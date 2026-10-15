@@ -14,6 +14,12 @@ const MOCK_PORT = 3010
 const APP_PORT = 5275
 const ci = Boolean(process.env.CI)
 
+/**
+ * ⚠️ 两个 webServer 都显式绑 127.0.0.1：
+ * Linux runner 上 `localhost` 可能解析到 ::1，而 baseURL 用的是 127.0.0.1 →
+ * 浏览器 ERR_CONNECTION_REFUSED、三个用例全红，本地（Windows 排在 IPv4）却看不出来。
+ */
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
@@ -41,7 +47,7 @@ export default defineConfig({
       env: { MOCK_PORT: String(MOCK_PORT) },
     },
     {
-      command: `npx vite --port ${APP_PORT} --strictPort`,
+      command: `npx vite --host 127.0.0.1 --port ${APP_PORT} --strictPort`,
       port: APP_PORT,
       reuseExistingServer: !ci,
       env: { VITE_DEV_PROXY_TARGET: `http://127.0.0.1:${MOCK_PORT}` },
