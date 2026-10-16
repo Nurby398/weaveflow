@@ -50,6 +50,7 @@ import { createSSEStream } from '@/api/stream'
 import { useAuthGuard } from '@/composables/useAuthGuard'
 import { useToast } from '@/composables/useToast'
 import { useUserStore } from '@/store/user'
+import { useChatStore } from '@/store/chat'
 import { agentAvatar, DEFAULT_ASSISTANT_NAME } from '@/lib/avatars'
 import thinkingGif from '../../../picture/思考中.gif'
 import { hasContractIssues, normalizeContractDetails, retryHint } from '@/lib/contract'
@@ -75,6 +76,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const userStore = useUserStore()
+const chatStore = useChatStore()
 const { requireLogin } = useAuthGuard()
 
 const conversationId = computed(() => String(route.params.conversationId || ''))
@@ -142,14 +144,24 @@ const isWeaveflowConversation = computed(() => {
 const dispatchAgent = ref('')
 const dispatchAgentId = ref('')
 
-const conversations = ref([])
+/** 会话列表 / 消息流 / 流式态：收敛进 chat store（P1-1 第 4 块），computed 桥接保持 ~76 处用法零改动 */
+const conversations = computed({
+  get: () => chatStore.conversations,
+  set: (value) => chatStore.setConversations(value),
+})
 const agents = ref([])
-const messages = ref([])
+const messages = computed({
+  get: () => chatStore.messages,
+  set: (value) => chatStore.setMessages(value),
+})
 const loadingMessages = ref(false)
 const input = ref('')
 /** 待发送 / 已上传的附件 */
 const uploads = ref([])
-const streaming = ref(false)
+const streaming = computed({
+  get: () => chatStore.streaming,
+  set: (value) => chatStore.setStreaming(value),
+})
 const streamError = ref('')
 
 /**
