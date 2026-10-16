@@ -18,7 +18,7 @@ function clamp(v, a, b) {
 
 var DEFAULTS = {
   count: 0, // 0 = 依据画布尺寸自动（约 1500~5200）
-  palette: ['#26282c', '#34373c', '#43464c', '#55585e'],
+  palette: ['#16181b', '#1f2125', '#292c30', '#33363b'],
   bg: 'rgba(0,0,0,0)', // 不透明模式下的背景色 / 拖尾基色
   alpha: true, // true = 透明画布（可叠在任意底色上），拖尾改用 alpha 衰减
   trail: 0.4, // 拖尾：每帧衰减比例，0 = 关闭拖尾（数值越大拖尾越短）
@@ -711,7 +711,7 @@ ParticleOrb.prototype._render = function () {
     var syp = cyp + y2 * persp * k
 
     // 视口裁剪
-    var ds = (P.sz[i] * persp * 5.2 + 4) * this.dpr
+    var ds = (P.sz[i] * persp * 7.0 + 4) * this.dpr
     if (sxp < -ds || syp < -ds || sxp > w + ds || syp > h + ds) continue
 
     // 景深：靠近相机更大更亮
