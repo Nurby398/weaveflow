@@ -93,7 +93,9 @@ export default defineConfig(({ command, mode }) => {
         reporter: ['text-summary', 'text'],
         // 只统计产品代码；入口与构建脚本不计入
         include: ['src/**/*.{js,vue}'],
-        exclude: ['src/main.js'],
+        // 入口与"移植的第三方视觉特效"不计入：particleOrb.js 是从 particle-orb.html 原样
+        // 提取的 canvas 粒子内核（算法非本项目逻辑），单元测试测不动渲染循环，不应拖垮棘轮。
+        exclude: ['src/main.js', 'src/lib/particleOrb.js'],
         /**
          * 门槛＝当前实测值的「棘轮」：只许涨、不许跌。
          *

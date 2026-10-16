@@ -46,7 +46,8 @@ export async function preparePublic(page, { theme = 'light', width = 1280, heigh
      */
     const hideVideo = () => {
       const style = document.createElement('style')
-      style.textContent = 'video { display: none !important; }'
+      // 粒子内核是持续动画（散开/聚合/脉冲），截图会不确定 → 与背景视频同理，截图时隐藏
+      style.textContent = 'video { display: none !important; } .particle-orb { display: none !important; }'
       document.head?.appendChild(style)
     }
     if (document.head) hideVideo()

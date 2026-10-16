@@ -43,6 +43,7 @@ import PlanCard from '@/components/PlanCard.vue'
 import ChatMessageList from '@/components/ChatMessageList.vue'
 import ChatComposer from '@/components/ChatComposer.vue'
 import ChatRail from '@/components/ChatRail.vue'
+import ParticleOrbBackground from '@/components/ParticleOrbBackground.vue'
 import Empty from '@/components/ui/Empty.vue'
 import Modal from '@/components/ui/Modal.vue'
 import { agentApi, conversationApi, logApiError, toFriendlyError, uploadAttachment } from '@/api'
@@ -1478,6 +1479,8 @@ onBeforeUnmount(() => {
         </p>
 
         <div ref="listRef" class="chat__list ui-scroll" @scroll.passive="onScroll">
+          <!-- 粒子内核背景：AI 回答中聚合脉冲 / 空闲散开自转轻微脉冲（灰黑粒子，透明底） -->
+          <ParticleOrbBackground :streaming="streaming" />
           <div class="chat__thread">
             <p v-if="loadingMessages && !messages.length" class="chat__hint">加载消息…</p>
             <Empty
@@ -1766,6 +1769,7 @@ onBeforeUnmount(() => {
 .chat__list {
   flex: 1;
   min-height: 0;
+  position: relative;
 }
 
 /* 对话列：内容列 840px 居中（照参照页实测），消息流 / 输入区 / 选择器共用同一列宽 */
@@ -1776,6 +1780,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: var(--ui-space-6);
+  position: relative;
+  z-index: 1;
 }
 
 .chat__hint {
