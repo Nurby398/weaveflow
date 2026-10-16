@@ -90,6 +90,8 @@ defineExpose({ focus: () => composerRef.value?.focus() })
   background: var(--ui-bg-layer-1);
   -webkit-backdrop-filter: var(--ui-glass-blur);
   backdrop-filter: var(--ui-glass-blur);
+  position: relative;
+  z-index: 1;
 }
 
 .chat__composer-inner {

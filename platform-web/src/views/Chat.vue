@@ -1387,6 +1387,8 @@ onBeforeUnmount(() => {
 
     <!-- ------------------------------ 主区域 ------------------------------ -->
     <section class="chat__main">
+      <!-- 粒子内核背景：固定在主区（不随消息滚动）；AI 回答聚合脉冲 / 空闲散开自转轻微脉冲 -->
+      <ParticleOrbBackground :streaming="streaming" />
       <header class="chat__head">
         <Avatar v-if="headerAgent" :src="agentAvatar(headerAgent)" :name="headerAgent.name" size="sm" shape="square" />
         <div class="chat__head-main">
@@ -1479,8 +1481,6 @@ onBeforeUnmount(() => {
         </p>
 
         <div ref="listRef" class="chat__list ui-scroll" @scroll.passive="onScroll">
-          <!-- 粒子内核背景：AI 回答中聚合脉冲 / 空闲散开自转轻微脉冲（灰黑粒子，透明底） -->
-          <ParticleOrbBackground :streaming="streaming" />
           <div class="chat__thread">
             <p v-if="loadingMessages && !messages.length" class="chat__hint">加载消息…</p>
             <Empty
@@ -1692,6 +1692,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  position: relative;
   background: var(--ui-bg-layer-1);
   -webkit-backdrop-filter: var(--ui-glass-blur);
   backdrop-filter: var(--ui-glass-blur);
@@ -1704,6 +1705,8 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--ui-space-3);
   height: 60px;
+  position: relative;
+  z-index: 1;
   padding: 0 var(--ui-space-5);
   border-bottom: 1px solid var(--ui-border-l1);
 }
@@ -1770,6 +1773,7 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0;
   position: relative;
+  z-index: 1;
 }
 
 /* 对话列：内容列 840px 居中（照参照页实测），消息流 / 输入区 / 选择器共用同一列宽 */

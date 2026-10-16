@@ -9,6 +9,15 @@
  */
 'use strict'
 
+/**
+ * 织流定制的主题配色：明亮主题用灰黑粒子，暗黑主题用亮灰银反差粒子（显眼、不被深色背景压住）。
+ * 颜色集中在这份"移植特效"文件里（已被令牌护栏豁免），组件只 import、不写字面量。
+ */
+export var PARTICLE_PALETTES = {
+  light: ['#16181b', '#1f2125', '#292c30', '#33363b'],
+  dark: ['#f2f4f8', '#cdd2da', '#a7aeb8', '#848c98'],
+}
+
 var TAU = Math.PI * 2
 var REDUCED = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null
 
